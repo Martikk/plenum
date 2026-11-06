@@ -49,4 +49,6 @@ Set `NEXT_PUBLIC_API_URL` to the plenum-api URL at build time. The app then requ
 - **Reports** (`/reports`): revenue, GP%, request→scheduled time, quote win rate, GP by contract type, quote pipeline, tech load this week, jobs below margin threshold; 30/90/365-day ranges.
 - **Import** (`/import`): migrate from GamePlanPro CSV exports (organizations → buildings → equipment, contacts, contracts). Columns auto-mapped from GPP headers, "Name [id]" references resolved, preview with skipped-row reasons, upsert by ID.
 - **Notifications**: bell in the header with role-specific events (portal approvals, overdue pricing, declined roles, invoices to review, low-margin jobs, new bookings for techs).
+- **Progress billing**: contract value, billed to date, remaining and holdback on each work order; progress invoices for N% with optional holdback (10% default on Installation, BC Builders Lien Act); final invoice nets previous billings and releases holdback.
+- **Equipment history** (`/equipment?id=`): service history, last inspection/service, next PM, linked profiles.
 - **Settings** (`/settings`): PST, GST, GP% threshold and internal labour cost, editable by management; user admin (create, role, password, delete) in API mode.

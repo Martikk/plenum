@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { PERSONAS, useLookups, useStore } from "@/lib/store";
 import {
-  deriveStatus, economics, fmtDate, fmtDateTime, invoiceSubtotal, materialSell, money, money2, pct, typeCode, MARGIN_THRESHOLD, PST,
+  billing, deriveStatus, economics, fmtDate, fmtDateTime, invoiceSubtotal, materialSell, money, money2, pct, typeCode, MARGIN_THRESHOLD, PST,
 } from "@/lib/logic";
 import {
   Avatar, Empty, Field, InvoiceStatusBadge, MarginMeter, QuoteStatusBadge, RoleStatusBadge, UrgencyTag, WOStatusBadge,
@@ -126,18 +126,7 @@ function WODetail() {
           {tab === "roles" && <Roles w={w} />}
           {tab === "materials" && <Materials w={w} />}
           {tab === "time" && <Time w={w} />}
-          {tab === "invoices" && (
-            <div className="card overflow-hidden">
-              {invs.length === 0 ? <Empty>No invoices yet.</Empty> : (
-                <table className="tbl"><thead><tr><th>Invoice</th><th>Date</th><th>Type</th><th className="text-right">Subtotal</th><th>Status</th></tr></thead>
-                  <tbody>{invs.map((i) => (
-                    <tr key={i.id} className="cursor-pointer" onClick={() => router.push(`/invoices?open=${i.id}`)}>
-                      <td className="num font-semibold text-primary">{i.id}</td><td className="num">{fmtDate(i.date)}</td>
-                      <td>{i.progress ? "Progress billing" : "Final"}</td><td className="text-right num">{money2(invoiceSubtotal(i))}</td><td><InvoiceStatusBadge s={i.status} size="sm" /></td>
-                    </tr>))}</tbody></table>
-              )}
-            </div>
-          )}
+          {tab === "invoices" && <Billing w={w} />}
           {tab === "files" && <WOFiles woId={w.id} />}
           {tab === "history" && (
             <div className="card">
@@ -186,7 +175,7 @@ function WODetail() {
             <div className="card p-4">
               <div className="flex items-center gap-2 font-semibold mb-2"><Wrench size={15} className="text-ink-3" />Equipment</div>
               <ul className="space-y-1.5">{w.equipmentIds.map((id) => { const q = L.equip(id)!; return (
-                <li key={id} className="text-[13px]"><span className="font-mono text-ink-2 mr-1.5">{q.tag}</span>{q.type}<div className="text-ink-3 text-[12px]">{[q.manufacturer, q.model, q.location].filter(Boolean).join(" · ")}</div></li>); })}</ul>
+                <li key={id} className="text-[13px]"><Link href={`/equipment?id=${id}`} className="hover:text-primary"><span className="font-mono text-ink-2 mr-1.5">{q.tag}</span>{q.type}</Link><div className="text-ink-3 text-[12px]">{[q.manufacturer, q.model, q.location].filter(Boolean).join(" · ")}</div></li>); })}</ul>
             </div>
           )}
           <div className="card p-4">
@@ -452,6 +441,52 @@ function Time({ w }: { w: WorkOrder }) {
         );
       })}
       <p className="text-[12.5px] text-ink-3">An entry without a date is an estimate; with a date it's actual time (matches GPP behaviour).</p>
+    </div>
+  );
+}
+
+function Billing({ w }: { w: WorkOrder }) {
+  const s = useStore(); const L = useLookups(); const router = useRouter();
+  const c = L.contract(w.contractId)!;
+  const invs = s.invoices.filter((i) => i.woId === w.id);
+  const b = billing(w, c, s.people, s.invoices);
+  const [pct, setPct] = useState(25);
+  const [hb, setHb] = useState(c.type === "Installation" ? 10 : 0);
+  const canBill = s.persona !== "tech" && w.kind === "WO";
+  return (
+    <div className="space-y-4">
+      <div className="card p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div><div className="label">Contract value</div><div className="num text-[17px] font-semibold">{money2(b.value)}</div><div className="text-[12px] text-ink-3">{w.estimate === "Estimate" ? "estimate: max(quoted, T&M)" : "firm price"}</div></div>
+          <div><div className="label">Billed to date</div><div className="num text-[17px] font-semibold">{money2(b.gross)}</div><div className="text-[12px] text-ink-3">{(b.pct * 100).toFixed(0)}% · {b.count} progress</div></div>
+          <div><div className="label">Remaining</div><div className="num text-[17px] font-semibold">{money2(b.remaining)}</div></div>
+          <div><div className="label">Holdback held</div><div className="num text-[17px] font-semibold">{money2(b.outstandingHoldback)}</div>{b.released > 0 && <div className="text-[12px] text-ink-3">released {money2(b.released)}</div>}</div>
+        </div>
+        <div className="mt-3 h-2 rounded-full bg-sunken overflow-hidden" title={`${(b.pct * 100).toFixed(0)}% billed`}>
+          <div className="h-full rounded-full" style={{ width: `${Math.min(1, b.pct) * 100}%`, background: "var(--primary)" }} />
+        </div>
+        {canBill && (
+          <div className="mt-4 pt-4 border-t border-line flex flex-wrap items-end gap-3">
+            <Field label="Progress %"><input type="number" min={1} max={100} className="field !w-24 num" value={pct} onChange={(e) => setPct(Number(e.target.value))} /></Field>
+            <Field label="Holdback %"><input type="number" min={0} max={20} className="field !w-24 num" value={hb} onChange={(e) => setHb(Number(e.target.value))} /></Field>
+            <button className="btn" disabled={b.remaining <= 0 || pct <= 0} onClick={() => { const id = s.createProgressInvoice(w.id, pct, hb); router.push(`/invoices?open=${id}`); }}>
+              Progress invoice ({money2(Math.min(b.remaining, (b.value * pct) / 100))})</button>
+            <button className="btn btn-primary" onClick={() => { const id = s.createFinalInvoice(w.id); router.push(`/invoices?open=${id}`); }}>Final invoice</button>
+            <button className="btn btn-ghost" onClick={() => { const id = s.createInvoice(w.id); router.push(`/invoices?open=${id}`); }}>Blank invoice</button>
+          </div>
+        )}
+        {c.type === "Installation" && <p className="text-[12px] text-ink-3 mt-2">BC Builders Lien Act: 10% holdback is typical on Installation progress billing; it is released on the final invoice after the lien period.</p>}
+      </div>
+      <div className="card overflow-hidden">
+        {invs.length === 0 ? <Empty>No invoices yet.</Empty> : (
+          <table className="tbl"><thead><tr><th>Invoice</th><th>Date</th><th>Type</th><th className="text-right">Subtotal</th><th>Status</th></tr></thead>
+            <tbody>{invs.map((i) => (
+              <tr key={i.id} className="cursor-pointer" onClick={() => router.push(`/invoices?open=${i.id}`)}>
+                <td className="num font-semibold text-primary">{i.id}</td><td className="num">{fmtDate(i.date)}</td>
+                <td>{i.progress ? "Progress billing" : "Final"}</td><td className="text-right num">{money2(invoiceSubtotal(i))}</td><td><InvoiceStatusBadge s={i.status} size="sm" /></td>
+              </tr>))}</tbody></table>
+        )}
+      </div>
     </div>
   );
 }

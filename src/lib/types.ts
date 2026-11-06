@@ -97,7 +97,7 @@ export interface MaterialEntry {
   vendor?: string; pstExempt?: boolean; personId?: number; received?: string;
 }
 
-export interface InvoiceLine { kind: "Labour" | "Parts" | "Per Agreement" | "Retainer" | "Truck Charge" | "Work Noted Above"; description: string; amount: number; }
+export interface InvoiceLine { kind: "Labour" | "Parts" | "Per Agreement" | "Retainer" | "Truck Charge" | "Work Noted Above" | "Progress" | "Holdback" | "Less previous billing" | "Holdback release"; description: string; amount: number; }
 
 export interface Invoice {
   id: number; woId: number; date: string; status: InvoiceStatus; progress: boolean;

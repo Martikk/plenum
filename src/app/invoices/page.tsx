@@ -70,7 +70,7 @@ function Review({ inv }: { inv: Invoice }) {
                 <tr key={i}>
                   <td className="whitespace-nowrap">{editable ? (
                     <select className="field !py-1" value={l.kind} onChange={(ev) => setLine(i, { kind: ev.target.value as InvoiceLine["kind"] })}>
-                      {["Labour", "Parts", "Per Agreement", "Retainer", "Truck Charge", "Work Noted Above"].map((k) => <option key={k}>{k}</option>)}</select>) : l.kind}</td>
+                      {["Labour", "Parts", "Per Agreement", "Retainer", "Truck Charge", "Work Noted Above", "Progress", "Holdback", "Less previous billing", "Holdback release"].map((k) => <option key={k}>{k}</option>)}</select>) : l.kind}</td>
                   <td>{editable ? <input className="field !py-1" value={l.description} onChange={(ev) => setLine(i, { description: ev.target.value })} /> : l.description}</td>
                   <td className="text-right">{editable ? <input type="number" className="field !py-1 !w-28 text-right num" value={l.amount} onChange={(ev) => setLine(i, { amount: Number(ev.target.value) })} /> : <span className="num">{money2(l.amount)}</span>}</td>
                   <td>{editable && <button className="btn btn-ghost btn-sm" aria-label="Remove line" onClick={() => s.updateInvoice(inv.id, { lines: inv.lines.filter((_, j) => j !== i) })}><Trash2 size={14} /></button>}</td>

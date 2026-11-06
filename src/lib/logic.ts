@@ -148,3 +148,23 @@ export function relTime(iso: string, now = new Date()) {
   if (diff < 24) return `${Math.round(diff)}h ago`;
   return `${Math.round(diff / 24)}d ago`;
 }
+
+/**
+ * Progress billing position for a work order.
+ * value: firm-price → quoted sell; estimate → max(quoted, T&M actual).
+ * gross: sum of "Progress"/"Work Noted Above"/labour/parts lines on non-cancelled invoices (before holdback).
+ */
+export function billing(wo: WorkOrder, c: Contract, people: Person[], invoices: Invoice[]) {
+  const e = economics(wo, c, people, invoices);
+  const quoted = e.quote.sell;
+  const value = wo.estimate === "Estimate" ? Math.max(quoted, e.actual.sell) : quoted || e.actual.sell;
+  const live = invoices.filter((i) => i.woId === wo.id && i.status !== "Cancelled");
+  let gross = 0, held = 0, released = 0;
+  for (const i of live) for (const l of i.lines) {
+    if (l.kind === "Holdback") held += -l.amount;
+    else if (l.kind === "Holdback release") released += l.amount;
+    else if (l.kind === "Less previous billing") gross += l.amount; // negative: offsets the full-value line on a final invoice
+    else gross += l.amount;
+  }
+  return { value, gross, held, released, outstandingHoldback: held - released, remaining: Math.max(0, value - gross), pct: value > 0 ? gross / value : 0, count: live.filter((i) => i.progress).length };
+}

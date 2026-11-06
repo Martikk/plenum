@@ -23,7 +23,7 @@ export default function Buildings() {
               {b.access && <div className="mt-2 text-[12.5px] rounded-md p-2 bg-sunken flex gap-2"><KeyRound size={13} className="mt-0.5 shrink-0 text-ink-3" />{b.access}</div>}
               <div className="mt-3 label flex items-center gap-1"><Wrench size={12} />Equipment ({eq.length})</div>
               <div className="flex flex-wrap gap-1.5 mt-1">
-                {eq.map((e) => <span key={e.id} className="text-[12px] px-1.5 py-0.5 rounded bg-sunken" title={[e.manufacturer, e.model, e.location].filter(Boolean).join(" · ")}><span className="font-mono">{e.tag}</span> {e.type}{e.lastInspected ? ` · insp. ${fmtDate(e.lastInspected)}` : ""}</span>)}
+                {eq.map((e) => <Link href={`/equipment?id=${e.id}`} key={e.id} className="text-[12px] px-1.5 py-0.5 rounded bg-sunken hover:bg-primary-soft hover:text-primary" title={[e.manufacturer, e.model, e.location].filter(Boolean).join(" · ")}><span className="font-mono">{e.tag}</span> {e.type}{e.lastInspected ? ` · insp. ${fmtDate(e.lastInspected)}` : ""}</Link>)}
                 {eq.length === 0 && <span className="text-[12.5px] text-ink-3">None on file</span>}
               </div>
               {recent.length > 0 && (

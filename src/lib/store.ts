@@ -7,7 +7,7 @@ import type {
   Building, Contract, Equipment, HistoryItem, Invoice, InvoiceStatus, MaterialEntry, Org, Person,
   QuoteStatus, Role, RoleStatus, RoleType, TimeEntry, WorkOrder,
 } from "./types";
-import { applySettings, deriveStatus, DEFAULT_SETTINGS, type CalcSettings } from "./logic";
+import { applySettings, billing, deriveStatus, DEFAULT_SETTINGS, type CalcSettings } from "./logic";
 import type { MaintProfile } from "./types";
 
 export type Persona = "dispatcher" | "coordinator" | "tech" | "manager" | "ceo";
@@ -43,6 +43,10 @@ interface State extends Data {
   createQuote: (wo: Omit<WorkOrder, "id" | "name" | "history" | "createdAt">) => number;
   addNote: (woId: number, text: string) => void;
   createInvoice: (woId: number) => number;
+  /** Progress invoice for pct% of the contract value, optionally withholding holdbackPct%. */
+  createProgressInvoice: (woId: number, pct: number, holdbackPct: number) => number;
+  /** Final invoice: full value less previous billing, plus release of held holdback. */
+  createFinalInvoice: (woId: number) => number;
   setInvoiceStatus: (id: number, s: InvoiceStatus, note?: string) => void;
   updateInvoice: (id: number, patch: Partial<Invoice>) => void;
   toggleHold: (woId: number) => void;
@@ -140,6 +144,28 @@ export const useStore = create<State>()(
           const id = Math.max(...get().invoices.map((i) => i.id)) + 1;
           set((s) => ({ invoices: [{ id, woId, date: new Date().toISOString().slice(0, 10), status: "Draft", progress: false, lines: [{ kind: "Work Noted Above", description: "Per work performed", amount: 0 }] }, ...s.invoices] }));
           patchWO(woId, (w) => ({ ...w, history: [hist("Change", `Invoice ${id} created`), ...w.history] }));
+          return id;
+        },
+        createProgressInvoice: (woId, pct, holdbackPct) => {
+          const st = get(); const w = st.workOrders.find((x) => x.id === woId)!; const c = st.contracts.find((x) => x.id === w.contractId)!;
+          const b = billing(w, c, st.people, st.invoices);
+          const amount = Math.min(b.remaining, Math.round(b.value * pct) / 100);
+          const id = Math.max(...st.invoices.map((i) => i.id)) + 1;
+          const lines: Invoice["lines"] = [{ kind: "Progress", description: `Progress billing #${b.count + 1}: ${pct}% of ${b.value.toLocaleString("en-CA", { style: "currency", currency: "CAD" })}`, amount }];
+          if (holdbackPct > 0) lines.push({ kind: "Holdback", description: `Holdback ${holdbackPct}% (Builders Lien Act)`, amount: -Math.round(amount * holdbackPct) / 100 });
+          set((s) => ({ invoices: [{ id, woId, date: new Date().toISOString().slice(0, 10), status: "Draft", progress: true, lines }, ...s.invoices] }));
+          patchWO(woId, (x) => ({ ...x, history: [hist("Change", `Progress invoice ${id} created (${pct}%)`), ...x.history] }));
+          return id;
+        },
+        createFinalInvoice: (woId) => {
+          const st = get(); const w = st.workOrders.find((x) => x.id === woId)!; const c = st.contracts.find((x) => x.id === w.contractId)!;
+          const b = billing(w, c, st.people, st.invoices);
+          const id = Math.max(...st.invoices.map((i) => i.id)) + 1;
+          const lines: Invoice["lines"] = [{ kind: "Work Noted Above", description: "Total contract value", amount: Math.round(b.value * 100) / 100 }];
+          if (b.gross > 0) lines.push({ kind: "Less previous billing", description: "Less progress billings to date", amount: -Math.round(b.gross * 100) / 100 });
+          if (b.outstandingHoldback > 0) lines.push({ kind: "Holdback release", description: "Release of holdback (due after lien period)", amount: Math.round(b.outstandingHoldback * 100) / 100 });
+          set((s) => ({ invoices: [{ id, woId, date: new Date().toISOString().slice(0, 10), status: "Draft", progress: false, lines }, ...s.invoices] }));
+          patchWO(woId, (x) => ({ ...x, history: [hist("Change", `Final invoice ${id} created`), ...x.history] }));
           return id;
         },
         setInvoiceStatus: (id, st, note) => {
