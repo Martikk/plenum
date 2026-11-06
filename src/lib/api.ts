@@ -67,7 +67,7 @@ export interface UserRow { id: number; email: string; role: Role; person_id: num
 export interface PortalData {
   org: { id: number; name: string }; gst: number;
   quotes: { id: number; status: "Sent" | "Approved" | "Declined"; sentAt?: string; building: string; address: string; request: string; recommended?: string; equipment: string[]; estimate: boolean; lines: { description: string; amount: number }[]; subtotal: number }[];
-  reports: { id: number; building: string; address: string; completedAt: string; request: string; workPerformed: string; techs: string[]; equipment: string[]; hours: number }[];
+  reports: { id: number; building: string; address: string; completedAt: string; request: string; workPerformed: string; techs: string[]; equipment: string[]; hours: number; files?: { id: number; name: string; mime: string }[] }[];
   invoices: { id: number; woId: number; date: string; status: "Sent" | "Paid"; building: string; po?: string; progress: boolean; lines: { kind: string; description: string; amount: number }[]; subtotal: number }[];
 }
 export const portal = {
@@ -122,3 +122,39 @@ export function startSync(onAuthRequired: () => void) {
     if (document.visibilityState === "visible" && useSync.getState().pending === 0) pull().catch(() => {});
   }, 30000);
 }
+
+// ---- Files (photos / PDFs)
+export interface FileRow { id: number; wo_id: number; name: string; mime: string; size: number; public: boolean; created_at: string; uploaded_by: string | null }
+
+/** Downscale photos on the device so uploads stay fast on mobile data (max 1600 px, JPEG 0.82). */
+async function prepare(file: File): Promise<{ name: string; mime: string; data: string }> {
+  const toB64 = (b: Blob) => new Promise<string>((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = bad; r.readAsDataURL(b); });
+  if (!file.type.startsWith("image/") || file.type === "image/heic") return { name: file.name, mime: file.type || "application/octet-stream", data: await toB64(file) };
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+  const blob: Blob = await new Promise((ok) => c.toBlob((b) => ok(b!), "image/jpeg", 0.82));
+  return { name: file.name.replace(/\.[^.]+$/, "") + ".jpg", mime: "image/jpeg", data: await toB64(blob) };
+}
+
+const blobCache = new Map<string, string>();
+export const files = {
+  list: (woId: number) => call<FileRow[]>(`/api/work-orders/${woId}/files`),
+  upload: async (woId: number, f: File, isPublic: boolean) => {
+    const body = await prepare(f);
+    return call<{ id: number }>(`/api/work-orders/${woId}/files`, { method: "POST", body: JSON.stringify({ ...body, public: isPublic }) });
+  },
+  setPublic: (id: number, pub: boolean) => call(`/api/files/${id}`, { method: "PATCH", body: JSON.stringify({ public: pub }) }),
+  remove: (id: number) => call(`/api/files/${id}`, { method: "DELETE" }),
+  /** Object URL for an authenticated download (img src can't send headers). */
+  url: async (id: number, portalScope = false) => {
+    const key = `${portalScope ? "p" : "s"}${id}`;
+    if (blobCache.has(key)) return blobCache.get(key)!;
+    const res = await fetch(`${API_URL}/api/${portalScope ? "portal/files" : "files"}/${id}`, { headers: { authorization: `Bearer ${getToken()}` } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const u = URL.createObjectURL(await res.blob());
+    blobCache.set(key, u);
+    return u;
+  },
+};

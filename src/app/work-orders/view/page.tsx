@@ -17,12 +17,13 @@ import {
 } from "@/components/ui";
 import type { MaterialType, QuoteStatus, RoleStatus, RoleType, TimeType, WorkOrder } from "@/lib/types";
 import { TECH_ROLES } from "@/lib/types";
+import { WOFiles } from "@/components/files";
 
 const ROLE_STATUSES: RoleStatus[] = ["Holding", "Posted", "Assigned", "Declined", "Responding", "Incomplete", "Complete"];
 const MAT_TYPES: MaterialType[] = ["Equipment", "Materials", "Parts", "Supplies", "Tools", "Subtrade", "Quote Fee", "Truck Charge", "Other", "Filters from Stock", "Refrigerant Purchased", "Refrigerant from Stock", "Truck Stock Purchased", "Truck Stock from Stock"];
 const TIME_TYPES: TimeType[] = ["Regular", "OT 1.5", "OT 2.0", "Call Out 1.5", "Call Out 2.0"];
 
-type Tab = "overview" | "roles" | "materials" | "time" | "invoices" | "history";
+type Tab = "overview" | "roles" | "materials" | "time" | "invoices" | "files" | "history";
 
 export default function Page() {
   return <Suspense><WODetail /></Suspense>;
@@ -49,7 +50,7 @@ function WODetail() {
   const tabs: [Tab, string, number?][] = [
     ["overview", "Overview"], ["roles", "Roles", w.roles.length],
     ["materials", "Materials", (isQ ? w.quotedMaterials : w.materials).length + (isQ ? 0 : w.quotedMaterials.length ? 0 : 0)],
-    ["time", "Time", (isQ ? w.quotedTime : w.time).length], ["invoices", "Invoices", invs.length], ["history", "History", w.history.length],
+    ["time", "Time", (isQ ? w.quotedTime : w.time).length], ["invoices", "Invoices", invs.length], ["files", "Photos & files"], ["history", "History", w.history.length],
   ];
 
   return (
@@ -137,6 +138,7 @@ function WODetail() {
               )}
             </div>
           )}
+          {tab === "files" && <WOFiles woId={w.id} />}
           {tab === "history" && (
             <div className="card">
               <div className="p-3 border-b border-line flex gap-2">

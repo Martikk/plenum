@@ -45,4 +45,5 @@ Set `NEXT_PUBLIC_API_URL` to the plenum-api URL at build time. The app then requ
 - **My jobs** (`/my`): mobile screen for techs. One-tap status (on my way / need return / complete), work-performed notes, quick time entry, materials used.
 - **Maintenance profiles** (`/maintenance`): recurring PM visits; "Generate" creates the month's PM work orders (non-billable on all-inclusive contracts) straight into the dispatch backlog.
 - **Customer portal** (`/portal`): customers sign in and see sent quotes (approve or decline with their name), service reports as soon as work is Complete, and sent or paid invoices, each printable. Costs and internal notes never leave the server. Staff can preview any customer.
+- **Photos & files**: techs take photos from the phone (resized on device), office uploads PDFs; "Public" photos show on the customer's service report.
 - **Settings** (`/settings`): PST, GST, GP% threshold and internal labour cost, editable by management; user admin (create, role, password, delete) in API mode.

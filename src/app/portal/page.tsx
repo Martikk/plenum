@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { fmtDate, money2 } from "@/lib/logic";
 import { Logo } from "@/components/shell";
 import { Empty } from "@/components/ui";
+import { Thumb } from "@/components/files";
 
 type Tab = "quotes" | "reports" | "invoices";
 
@@ -147,6 +148,7 @@ export default function Portal() {
                 <div className="mt-3 text-[13.5px] space-y-2">
                   <div><span className="label">Request · </span>{r.request}</div>
                   <div><div className="label mb-0.5">Work performed</div><p className="whitespace-pre-wrap">{r.workPerformed}</p></div>
+                  {r.files && r.files.length > 0 && <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">{r.files.map((f) => <Thumb key={f.id} id={f.id} mime={f.mime} name={f.name} portal className="w-full aspect-square" />)}</div>}
                   <div className="text-ink-2 text-[13px]">{r.techs.length ? `Technician${r.techs.length > 1 ? "s" : ""}: ${r.techs.join(", ")} · ` : ""}{r.hours ? `${r.hours.toFixed(1)} h on site` : ""}{r.equipment.length ? ` · ${r.equipment.join(", ")}` : ""}</div>
                 </div>
               </article>

@@ -6,6 +6,7 @@ import { MapPin, KeyRound, Truck, CheckCircle2, RotateCcw, Clock, Package, Chevr
 import { PERSONAS, useLookups, useStore } from "@/lib/store";
 import { fmtDateTime } from "@/lib/logic";
 import { RoleStatusBadge, UrgencyTag } from "@/components/ui";
+import { WOFiles } from "@/components/files";
 import type { Role, WorkOrder } from "@/lib/types";
 
 function JobCard({ w, r }: { w: WorkOrder; r: Role }) {
@@ -70,6 +71,11 @@ function JobCard({ w, r }: { w: WorkOrder; r: Role }) {
               <input type="number" step="0.25" inputMode="decimal" className="field !w-20 !h-10 num" placeholder="h" value={custom} onChange={(e) => setCustom(e.target.value)} />
               <button className="btn !h-10" disabled={!custom} onClick={() => { addHours(Number(custom)); setCustom(""); }}>Add</button>
             </div>
+          </div>
+
+          <div>
+            <div className="label mb-1.5">Photos</div>
+            <WOFiles woId={w.id} compact />
           </div>
 
           <div>
