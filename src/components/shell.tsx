@@ -126,12 +126,12 @@ function CommandSearch() {
     for (const w of workOrders) {
       const b = buildings.find((b) => b.id === w.buildingId);
       const hay = `${w.id} ${w.name} ${w.customerRequest} ${b?.address} ${b?.name} ${w.po ?? ""}`.toLowerCase();
-      if (hay.includes(s)) out.push({ href: `/work-orders/${w.id}`, title: `${w.id} · ${b?.name}`, sub: w.customerRequest, kind: w.kind === "QO" ? "Quote" : "WO" });
+      if (hay.includes(s)) out.push({ href: `/work-orders/view?id=${w.id}`, title: `${w.id} · ${b?.name}`, sub: w.customerRequest, kind: w.kind === "QO" ? "Quote" : "WO" });
     }
     for (const b of buildings) if (`${b.name} ${b.address} ${b.city}`.toLowerCase().includes(s)) out.push({ href: `/buildings#b${b.id}`, title: b.name, sub: `${b.address}, ${b.city}`, kind: "Building" });
     for (const c of contracts) {
       const o = orgs.find((o) => o.id === c.orgId);
-      if (`${c.id} ${c.type} ${c.serviceType} ${o?.name}`.toLowerCase().includes(s)) out.push({ href: `/contracts/${c.id}`, title: `${c.type}-${c.serviceType} | ${o?.name}`, sub: `Contract ${c.id}`, kind: "Contract" });
+      if (`${c.id} ${c.type} ${c.serviceType} ${o?.name}`.toLowerCase().includes(s)) out.push({ href: `/contracts/view?id=${c.id}`, title: `${c.type}-${c.serviceType} | ${o?.name}`, sub: `Contract ${c.id}`, kind: "Contract" });
     }
     return out.slice(0, 12);
   }, [q, workOrders, buildings, contracts, orgs]);
@@ -185,7 +185,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const path = usePathname();
   const hydrated = useHydrated();
   const counts = useCounts();
-  const woId = path.match(/^\/work-orders\/(\d+)/)?.[1];
+  const [woId, setWoId] = useState<string | null>(null);
+  useEffect(() => { setWoId(path === "/work-orders/view" ? new URLSearchParams(window.location.search).get("id") : null); });
   const isQuotePath = !!woId && useStore.getState().workOrders.find((w) => w.id === Number(woId))?.kind === "QO";
   return (
     <div className="min-h-screen flex">

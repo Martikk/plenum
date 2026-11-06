@@ -47,7 +47,7 @@ function Review({ inv }: { inv: Invoice }) {
       <div className="p-4 border-b border-line flex flex-wrap items-start gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2"><span className="num text-ink-3">Invoice</span><span className="num font-semibold text-[18px]">{inv.id}</span><InvoiceStatusBadge s={inv.status} /></div>
-          <div className="text-ink-2 mt-0.5"><Link href={`/work-orders/${w.id}`} className="text-primary num">WO #{w.id}</Link> · {b.name} · {L.org(w.orgId)?.name}</div>
+          <div className="text-ink-2 mt-0.5"><Link href={`/work-orders/view?id=${w.id}`} className="text-primary num">WO #{w.id}</Link> · {b.name} · {L.org(w.orgId)?.name}</div>
         </div>
         <div className="text-right">
           <div className="num text-[22px] font-semibold">{money2(sub * (1 + GST))}</div>

@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { useState } from "react";
 import clsx from "clsx";
 import {
@@ -23,8 +24,12 @@ const TIME_TYPES: TimeType[] = ["Regular", "OT 1.5", "OT 2.0", "Call Out 1.5", "
 
 type Tab = "overview" | "roles" | "materials" | "time" | "invoices" | "history";
 
-export default function WODetail() {
-  const { id } = useParams<{ id: string }>();
+export default function Page() {
+  return <Suspense><WODetail /></Suspense>;
+}
+
+function WODetail() {
+  const id = useSearchParams().get("id") ?? "";
   const s = useStore();
   const L = useLookups();
   const router = useRouter();
@@ -163,7 +168,7 @@ export default function WODetail() {
           </div>
           <div className="card p-4">
             <div className="flex items-center gap-2 font-semibold mb-2"><ScrollText size={15} className="text-ink-3" />
-              <Link href={`/contracts/${c.id}`} className="hover:text-primary">{c.type}-{c.serviceType} contract</Link></div>
+              <Link href={`/contracts/view?id=${c.id}`} className="hover:text-primary">{c.type}-{c.serviceType} contract</Link></div>
             <dl className="grid grid-cols-2 gap-y-1 text-[13px]">
               <dt className="text-ink-3">Journeyman</dt><dd className="num text-right">{money(c.rates.journeyman)}/h</dd>
               <dt className="text-ink-3">Apprentice</dt><dd className="num text-right">{money(c.rates.apprentice)}/h</dd>

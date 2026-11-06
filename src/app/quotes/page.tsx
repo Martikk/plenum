@@ -34,7 +34,7 @@ export default function Quotes() {
                 const tech = L.person(q.roles.find((r) => r.type === "Primary Tech")?.personId);
                 return (
                   <tr key={q.id}>
-                    <td><Link href={`/work-orders/${q.id}`} className="num font-semibold text-primary">{q.id}</Link><div className="text-[11.5px] text-ink-3 font-mono">{typeCode(c, "QO")}</div></td>
+                    <td><Link href={`/work-orders/view?id=${q.id}`} className="num font-semibold text-primary">{q.id}</Link><div className="text-[11.5px] text-ink-3 font-mono">{typeCode(c, "QO")}</div></td>
                     <td className="max-w-[420px]"><div className="font-medium truncate">{b?.name}</div><div className="text-ink-2 truncate">{q.workRecommended || q.customerRequest}</div></td>
                     <td><QuoteStatusBadge s={q.quoteStatus!} size="sm" />{e.quote.missingCost > 0 && <div className="text-[11.5px] mt-1" style={{ color: "var(--warn)" }}>{e.quote.missingCost} cost(s) missing</div>}</td>
                     <td>{tech && <span className="inline-flex items-center gap-1.5"><Avatar initials={tech.initials} />{tech.name.split(" ")[0]}</span>}</td>

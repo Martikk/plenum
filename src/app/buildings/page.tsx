@@ -28,7 +28,7 @@ export default function Buildings() {
               </div>
               {recent.length > 0 && (
                 <ul className="mt-3 border-t border-line pt-2 space-y-1.5">
-                  {recent.map((w) => <li key={w.id} className="flex items-center gap-2 text-[13px]"><Link href={`/work-orders/${w.id}`} className="num text-primary font-medium">#{w.id}</Link><span className="truncate flex-1 text-ink-2">{w.customerRequest}</span><WOStatusBadge s={deriveStatus(w)} size="sm" /></li>)}
+                  {recent.map((w) => <li key={w.id} className="flex items-center gap-2 text-[13px]"><Link href={`/work-orders/view?id=${w.id}`} className="num text-primary font-medium">#{w.id}</Link><span className="truncate flex-1 text-ink-2">{w.customerRequest}</span><WOStatusBadge s={deriveStatus(w)} size="sm" /></li>)}
                 </ul>
               )}
             </div>

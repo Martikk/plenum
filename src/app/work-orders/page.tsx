@@ -74,9 +74,9 @@ export default function WorkOrders() {
               {list.map(({ w, c, e, st }) => {
                 const b = L.building(w.buildingId);
                 return (
-                  <tr key={w.id} className="cursor-pointer" onClick={() => (window.location.href = `/work-orders/${w.id}`)}>
+                  <tr key={w.id} className="cursor-pointer" onClick={() => (window.location.href = `/work-orders/view?id=${w.id}`)}>
                     <td className="whitespace-nowrap">
-                      <Link href={`/work-orders/${w.id}`} className="num font-semibold text-primary">{w.id}</Link>
+                      <Link href={`/work-orders/view?id=${w.id}`} className="num font-semibold text-primary">{w.id}</Link>
                       <div className="text-[11.5px] text-ink-3 font-mono">{typeCode(c, "WO")}</div>
                     </td>
                     <td className="max-w-[420px]">

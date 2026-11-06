@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useLookups, useStore } from "@/lib/store";
 import { deriveStatus, economics, money, pct, typeCode } from "@/lib/logic";
@@ -14,8 +15,12 @@ const RULES: [keyof Contract, string, string][] = [
   ["ratesTemplate", "Rates Template", "Template for new contracts of the same type & service"],
 ];
 
-export default function ContractDetail() {
-  const { id } = useParams<{ id: string }>();
+export default function Page() {
+  return <Suspense><ContractDetail /></Suspense>;
+}
+
+function ContractDetail() {
+  const id = useSearchParams().get("id") ?? "";
   const s = useStore();
   const L = useLookups();
   const c = L.contract(Number(id));
@@ -82,7 +87,7 @@ export default function ContractDetail() {
         <table className="tbl">
           <thead><tr><th>ID</th><th>Building · request</th><th>Status</th></tr></thead>
           <tbody>{wos.map((w) => (
-            <tr key={w.id}><td><Link href={`/work-orders/${w.id}`} className="num font-semibold text-primary">{w.id}</Link> <span className="text-[11.5px] text-ink-3">{w.kind}</span></td>
+            <tr key={w.id}><td><Link href={`/work-orders/view?id=${w.id}`} className="num font-semibold text-primary">{w.id}</Link> <span className="text-[11.5px] text-ink-3">{w.kind}</span></td>
               <td><div className="font-medium">{L.building(w.buildingId)?.name}</div><div className="text-ink-2">{w.customerRequest}</div></td>
               <td>{w.kind === "QO" ? <QuoteStatusBadge s={w.quoteStatus!} size="sm" /> : <WOStatusBadge s={deriveStatus(w)} size="sm" />}</td></tr>))}
           </tbody>

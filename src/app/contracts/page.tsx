@@ -20,7 +20,7 @@ export default function Contracts() {
               const open = s.workOrders.filter((w) => w.contractId === c.id && !w.closed).length;
               return (
                 <tr key={c.id}>
-                  <td><Link href={`/contracts/${c.id}`} className="num font-semibold text-primary">{c.id}</Link></td>
+                  <td><Link href={`/contracts/view?id=${c.id}`} className="num font-semibold text-primary">{c.id}</Link></td>
                   <td><div className="font-medium">{c.type}-{c.serviceType} <span className="font-mono text-[12px] text-ink-3">{typeCode(c, "WO").replace("-WO", "")}</span></div><div className="text-ink-2">{o.name}</div></td>
                   <td className="text-ink-2">{c.buildingIds.map((id) => L.building(id)?.name).join(", ")}</td>
                   <td className="text-right num">{money(c.rates.journeyman)}</td>

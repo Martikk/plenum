@@ -65,7 +65,7 @@ export default function Today() {
   const row = (w: WorkOrder, right?: React.ReactNode) => {
     const b = L.building(w.buildingId);
     return (
-      <Link key={w.id} href={`/work-orders/${w.id}`} className="flex items-start gap-3 px-4 py-3 border-b border-line last:border-0 hover:bg-primary-soft/50">
+      <Link key={w.id} href={`/work-orders/view?id=${w.id}`} className="flex items-start gap-3 px-4 py-3 border-b border-line last:border-0 hover:bg-primary-soft/50">
         <span className="num font-semibold text-primary w-12 shrink-0">{w.id}</span>
         <span className="min-w-0 flex-1">
           <span className="block font-medium truncate">{b?.name} <span className="text-ink-3 font-normal">· {b?.city}</span></span>
@@ -148,7 +148,7 @@ export default function Today() {
                 const b = L.building(w.buildingId);
                 return (
                   <li key={r.id} className="border-b border-line last:border-0">
-                    <Link href={`/work-orders/${w.id}`} className="flex gap-3 px-4 py-2.5 hover:bg-primary-soft/50 items-center">
+                    <Link href={`/work-orders/view?id=${w.id}`} className="flex gap-3 px-4 py-2.5 hover:bg-primary-soft/50 items-center">
                       <span className="num text-ink-2 w-11 text-[13px]">{new Date(r.start!).toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>
                       <Avatar initials={p.initials} title={p.name} />
                       <span className="min-w-0 flex-1">

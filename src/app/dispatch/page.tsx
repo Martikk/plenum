@@ -92,7 +92,7 @@ export default function Dispatch() {
         {!readOnly && <GripVertical size={14} className="text-ink-3 mt-0.5 shrink-0" />}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <Link href={`/work-orders/${w.id}`} className="num font-semibold text-primary">#{w.id}</Link>
+            <Link href={`/work-orders/view?id=${w.id}`} className="num font-semibold text-primary">#{w.id}</Link>
             <UrgencyTag u={w.urgency} />
             <span className="ml-auto"><RoleStatusBadge s={r.status} size="sm" /></span>
           </div>
@@ -174,7 +174,7 @@ export default function Dispatch() {
                           const b = L.building(w.buildingId);
                           const conflict = conflicts.has(r.id);
                           return (
-                            <Link key={r.id} href={`/work-orders/${w.id}`} draggable={!readOnly && (!selfOnly || p.id === me.id)}
+                            <Link key={r.id} href={`/work-orders/view?id=${w.id}`} draggable={!readOnly && (!selfOnly || p.id === me.id)}
                               onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDrag({ woId: w.id, roleId: r.id, durMin: (new Date(r.end!).getTime() - new Date(r.start!).getTime()) / 60000 }); }}
                               onDragEnd={() => { setDrag(null); setHover(null); }}
                               title={`#${w.id} ${b?.name} — ${w.customerRequest}`}

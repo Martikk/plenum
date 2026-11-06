@@ -46,7 +46,7 @@ export default function NewQuote() {
       roles, quotedTime: Array.from({ length: techs }, (_, i) => ({ id: i + 1, personId: i === 0 ? techId : 7, hours, type: "Regular" as const })),
       time: [], quotedMaterials: mats, materials: [],
     });
-    router.push(`/work-orders/${id}`);
+    router.push(`/work-orders/view?id=${id}`);
   };
 
   return (
