@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plenum
 
-## Getting Started
+Field-service app for HVAC and plumbing: dispatch, quotes, work orders, invoice review.
+Built as a clean-room re-think of the GamePlanPro workflow used at Allied (see `docs/spec-notes.md`), following the **Option B, Middle Ground** dispatch model (May 2025 decision).
 
-First, run the development server:
+> Demo build: all data is fictional and stored in your browser (localStorage). Use "Reset demo data" in the user menu.
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What's in it
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Screen | What it does |
+|---|---|
+| **Today** | Persona-specific queue (Dispatch / Service Coordinator / Senior Tech / Coordination Manager), KPI tiles, margin alerts, today's schedule |
+| **Dispatch** | Resource timeline + backlog. Drag to schedule; required skills block the drop; senior techs can only book themselves; overlap conflicts are ringed red |
+| **Work orders** | Quick-filter chips + text filter; status derived from role statuses; GP% meter |
+| **Work order card** | Estimate-vs-actual economics strip, missing-cost warning, tabs: Overview, Roles, Materials, Time, Invoices, History |
+| **Quotes** | Tech drafts → Coordinator prices → Sent (customer portal) → Approved → Convert to WO. Sending is blocked while any cost is missing |
+| **New quote** | Tech-initiated form with exactly the fields from the business model doc, plus a pricing-alert timer |
+| **Invoices** | Review queue with automatic pre-send checks; approve & send, request changes, ask CEO, request PO |
+| **Contracts / Buildings** | Rates, markups, rules, default roles; sites, access notes, equipment |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Switch persona from the avatar menu (top right) to see each role's view.
 
-## Learn More
+## Stack
+Next.js 15 (App Router) · React 19 · Tailwind CSS 4 · Zustand (persisted) · lucide-react. No backend yet.
 
-To learn more about Next.js, take a look at the following resources:
+## Docs
+- `docs/design-research.md`: name, colour and density decisions, with sources
+- `docs/spec-notes.md`: what was observed in the GPP TEST system, and open questions
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Next steps (not built)
+Postgres + auth (roles/permissions), customer portal, maintenance profiles → auto PM work orders, PDF quote/WO/invoice, accounting sync, mobile tech view.
