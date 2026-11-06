@@ -7,7 +7,8 @@ import type {
   Building, Contract, Equipment, HistoryItem, Invoice, InvoiceStatus, MaterialEntry, Org, Person,
   QuoteStatus, Role, RoleStatus, RoleType, TimeEntry, WorkOrder,
 } from "./types";
-import { deriveStatus } from "./logic";
+import { applySettings, deriveStatus, DEFAULT_SETTINGS, type CalcSettings } from "./logic";
+import type { MaintProfile } from "./types";
 
 export type Persona = "dispatcher" | "coordinator" | "tech" | "manager" | "ceo";
 export const PERSONAS: Record<Persona, { label: string; personId: number; blurb: string }> = {
@@ -20,7 +21,7 @@ export const PERSONAS: Record<Persona, { label: string; personId: number; blurb:
 
 interface Data {
   orgs: Org[]; buildings: Building[]; equipment: Equipment[]; people: Person[]; contracts: Contract[];
-  workOrders: WorkOrder[]; invoices: Invoice[];
+  workOrders: WorkOrder[]; invoices: Invoice[]; profiles: MaintProfile[]; settings: CalcSettings;
 }
 
 interface State extends Data {
@@ -46,11 +47,17 @@ interface State extends Data {
   updateInvoice: (id: number, patch: Partial<Invoice>) => void;
   toggleHold: (woId: number) => void;
   closeWO: (woId: number) => void;
+  updateProfile: (id: number, patch: Partial<MaintProfile>) => void;
+  addProfile: (p: Omit<MaintProfile, "id" | "generated">) => void;
+  /** Create PM work orders for every active profile due in `ym` ("YYYY-MM"). Returns created WO ids. */
+  generatePM: (ym: string) => number[];
+  setSettings: (s: CalcSettings) => void;
 }
 
 const fresh = (): Data => structuredClone({
   orgs: seed.orgs, buildings: seed.buildings, equipment: seed.equipment, people: seed.people,
   contracts: seed.contracts, workOrders: seed.workOrders, invoices: seed.invoices,
+  profiles: seed.profiles, settings: DEFAULT_SETTINGS,
 });
 
 let seq = Date.now() % 100000;
@@ -141,9 +148,47 @@ export const useStore = create<State>()(
         updateInvoice: (id, patch) => set((s) => ({ invoices: s.invoices.map((i) => (i.id === id ? { ...i, ...patch } : i)) })),
         toggleHold: (woId) => patchWO(woId, (w) => ({ ...w, onHold: !w.onHold, history: [hist("Change", w.onHold ? "Released from hold" : "Put on hold"), ...w.history] })),
         closeWO: (woId) => patchWO(woId, (w) => withStatusLog(w, { ...w, closed: true })),
+        updateProfile: (id, patch) => set((s) => ({ profiles: s.profiles.map((p) => (p.id === id ? { ...p, ...patch } : p)) })),
+        addProfile: (p) => set((s) => ({ profiles: [...s.profiles, { ...p, id: Math.max(700, ...s.profiles.map((x) => x.id)) + 1, generated: [] }] })),
+        generatePM: (ym) => {
+          const month = Number(ym.slice(5, 7));
+          const st = get();
+          const due = st.profiles.filter((p) => p.active && p.months.includes(month) && !p.generated.includes(ym));
+          let id = Math.max(...st.workOrders.map((w) => w.id));
+          const created: WorkOrder[] = due.map((p) => {
+            const c = st.contracts.find((c) => c.id === p.contractId)!;
+            const b = st.buildings.find((b) => b.id === p.buildingId)!;
+            id += 1;
+            const dueDate = `${ym}-${month === 2 ? "28" : "30"}`;
+            return {
+              id, kind: "WO", name: `${b.name}-${id}-WO`, contractId: c.id, buildingId: b.id, orgId: c.orgId,
+              equipmentIds: p.equipmentIds, createdAt: new Date().toISOString(), due: dueDate, urgency: "Low",
+              billType: c.allInclusive ? "Non-Billable All-Inclusive" : "Billable", estimate: "Firm Price", pricePending: false,
+              customerRequest: `PM: ${p.name}. ${p.description}`, internalInstructions: `Generated from maintenance profile #${p.id} for ${ym}`,
+              roles: [
+                { id: nid(), type: "Primary Tech", personId: p.techIds[0], status: p.techIds[0] ? "Assigned" : "Holding" },
+                ...c.defaultRolePersonIds.map((pid) => ({ id: nid(), type: "Property Contact" as RoleType, personId: pid, status: "Assigned" as RoleStatus })),
+              ],
+              quotedTime: p.techIds.length ? [{ id: nid(), personId: p.techIds[0], hours: p.hours, type: "Regular" }] : [],
+              time: [], quotedMaterials: [], materials: [],
+              history: [hist("Change", `PM work order generated from profile "${p.name}" (${ym})`)],
+            };
+          });
+          set((s) => ({
+            workOrders: [...created, ...s.workOrders],
+            profiles: s.profiles.map((p) => (due.some((d) => d.id === p.id) ? { ...p, generated: [...p.generated, ym] } : p)),
+          }));
+          return created.map((w) => w.id);
+        },
+        setSettings: (settings) => { applySettings(settings); set({ settings }); },
       };
     },
-    { name: "plenum-demo-v1" },
+    {
+      name: "plenum-demo-v1",
+      // Older saved states lack newer collections — fill them from seed.
+      merge: (persisted, current) => ({ ...current, ...(persisted as object), ...(!(persisted as State)?.profiles ? { profiles: current.profiles } : {}), ...(!(persisted as State)?.settings ? { settings: current.settings } : {}) }),
+      onRehydrateStorage: () => (st) => applySettings(st?.settings),
+    },
   ),
 );
 
@@ -165,3 +210,6 @@ export function useLookups() {
     wo: (id?: number) => s.workOrders.find((w) => w.id === id),
   };
 }
+
+// Keep calculation settings in sync whenever state is replaced (e.g. API pull).
+useStore.subscribe((s, prev) => { if (s.settings !== prev.settings) applySettings(s.settings); });

@@ -31,12 +31,11 @@ export default function Login() {
     <div className="min-h-[70vh] grid place-items-center">
       <form onSubmit={submit} className="card p-6 w-full max-w-sm space-y-4">
         <div className="flex items-center gap-2.5"><Logo size={30} /><span className="text-[19px] font-semibold tracking-tight">Plenum</span></div>
-        <Field label="Account">
-          <select className="field" value={email} onChange={(e) => setEmail(e.target.value)}>
-            {DEMO.map(([e, l]) => <option key={e} value={e}>{l} · {e}</option>)}
-          </select>
+        <Field label="Email">
+          <input className="field" type="email" list="demo-accounts" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" />
+          <datalist id="demo-accounts">{DEMO.map(([e, l]) => <option key={e} value={e}>{l}</option>)}</datalist>
         </Field>
-        <Field label="Password"><input type="password" className="field" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus /></Field>
+        <Field label="Password"><input type="password" className="field" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus autoComplete="current-password" /></Field>
         {err && <p className="text-[13px]" style={{ color: "var(--danger)" }}>{err}</p>}
         <button className="btn btn-primary w-full justify-center" disabled={busy || !password}>{busy ? "Signing in…" : "Sign in"}</button>
       </form>

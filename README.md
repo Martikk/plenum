@@ -39,3 +39,9 @@ Postgres + auth (roles/permissions), customer portal, maintenance profiles → a
 
 ## Backend mode
 Set `NEXT_PUBLIC_API_URL` to the plenum-api URL at build time. The app then requires sign-in, loads data from the API, pushes every change back, and rolls back if the server rejects it. Without the variable it runs in local demo mode.
+
+## Added
+- **PDF documents**: quote, field report and invoice at `/print?doc=quote|wo|invoice&id=…`, via browser "Save as PDF".
+- **My jobs** (`/my`): mobile screen for techs. One-tap status (on my way / need return / complete), work-performed notes, quick time entry, materials used.
+- **Maintenance profiles** (`/maintenance`): recurring PM visits; "Generate" creates the month's PM work orders (non-billable on all-inclusive contracts) straight into the dispatch backlog.
+- **Settings** (`/settings`): PST, GST, GP% threshold and internal labour cost, editable by management; user admin (create, role, password, delete) in API mode.

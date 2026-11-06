@@ -121,3 +121,15 @@ export interface WorkOrder {
   quotedSellOverride?: number;
   history: HistoryItem[];
 }
+
+/** Maintenance profile → generates PM work orders in the listed months (GPP "Maint Profiles"). */
+export interface MaintProfile {
+  id: number; name: string; contractId: number; buildingId: number;
+  months: number[];            // 1–12
+  hours: number;               // estimated hours per visit
+  techIds: number[];           // preferred techs, first becomes Primary Tech
+  equipmentIds: number[];
+  description: string;
+  active: boolean;
+  generated: string[];         // "YYYY-MM" periods already generated
+}

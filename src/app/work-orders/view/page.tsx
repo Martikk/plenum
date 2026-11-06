@@ -6,7 +6,7 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   ArrowLeft, Building2, KeyRound, MessageSquarePlus, PauseCircle, CheckCheck, Receipt, Trash2, Plus, AlertTriangle,
-  Calculator, Send, ThumbsUp, ThumbsDown, ArrowRightLeft, Check, ScrollText, Wrench, Phone, Mail,
+  Calculator, Send, ThumbsUp, FileDown, ThumbsDown, ArrowRightLeft, Check, ScrollText, Wrench, Phone, Mail,
 } from "lucide-react";
 import { PERSONAS, useLookups, useStore } from "@/lib/store";
 import {
@@ -72,6 +72,7 @@ function WODetail() {
             <p className="text-ink-2">{b.address}, {b.city} · {o.name}{w.po ? <> · PO <span className="font-mono">{w.po}</span></> : c.poRequired ? <span style={{ color: "var(--danger)" }}> · PO required</span> : null}</p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Link className="btn" href={`/print?doc=${isQ ? "quote" : "wo"}&id=${w.id}`}><FileDown size={15} />{isQ ? "Quote PDF" : "Field report"}</Link>
             <button className="btn" onClick={() => s.toggleHold(w.id)}><PauseCircle size={15} />{w.onHold ? "Release hold" : "Hold"}</button>
             {!isQ && <button className="btn" onClick={() => s.completeAllRoles(w.id)}><CheckCheck size={15} />Complete all</button>}
             {!isQ && <button className="btn btn-primary" onClick={() => { s.createInvoice(w.id); setTab("invoices"); }}><Receipt size={15} />Create invoice</button>}

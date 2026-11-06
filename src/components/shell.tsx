@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, CalendarRange, ClipboardList, FileText, Receipt, ScrollText, Building2, Search, Plus,
-  Sun, Moon, Monitor, RotateCcw, ChevronDown,
+  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon,
 } from "lucide-react";
 import { PERSONAS, useHydrated, useStore, type Persona } from "@/lib/store";
 import { deriveStatus } from "@/lib/logic";
@@ -27,12 +27,15 @@ export function Logo({ size = 26 }: { size?: number }) {
 
 const NAV = [
   { href: "/", label: "Today", icon: LayoutDashboard },
+  { href: "/my", label: "My jobs", icon: Smartphone },
   { href: "/dispatch", label: "Dispatch", icon: CalendarRange },
   { href: "/work-orders", label: "Work orders", icon: ClipboardList },
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/invoices", label: "Invoices", icon: Receipt },
   { href: "/contracts", label: "Contracts", icon: ScrollText },
   { href: "/buildings", label: "Buildings", icon: Building2 },
+  { href: "/maintenance", label: "Maintenance", icon: CalendarClock },
+  { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 function useCounts() {
@@ -152,10 +155,10 @@ function CommandSearch() {
   return (
     <>
       <button onClick={() => setOpen(true)}
-        className="flex items-center gap-2 h-9 w-full max-w-md px-3 rounded-lg border border-line bg-raised text-ink-3 hover:border-line-strong">
+        className="flex items-center gap-2 h-9 w-full min-w-0 max-w-md px-3 rounded-lg border border-line bg-raised text-ink-3 hover:border-line-strong">
         <Search size={15} />
-        <span className="flex-1 text-left">Search WO #, address, PO, contract…</span>
-        <span className="kbd">⌘K</span>
+        <span className="flex-1 text-left truncate whitespace-nowrap"><span className="sm:hidden">Search</span><span className="hidden sm:inline">Search WO #, address, PO, contract…</span></span>
+        <span className="kbd hidden sm:inline">⌘K</span>
       </button>
       {open && (
         <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center pt-[12vh] px-4" onClick={() => setOpen(false)}>
@@ -204,6 +207,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const isLogin = path === "/login";
   useEffect(() => { if (hydrated && !isLogin) startSync(() => router.replace("/login")); }, [hydrated, isLogin, router]);
   const ready = hydrated && (isLogin || sync.ready);
+  if (path === "/print") return ready ? <>{children}</> : <div className="p-6 text-ink-3">Loading…</div>;
   return (
     <div className="min-h-screen flex">
       <aside className="hidden md:flex w-[220px] shrink-0 flex-col border-r border-line bg-surface sticky top-0 h-screen">
@@ -237,7 +241,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link href="/" className="md:hidden"><Logo /></Link>
           <CommandSearch />
           <div className="flex-1" />
-          <Link href="/quotes/new" className="btn btn-primary"><Plus size={16} /> New quote</Link>
+          <Link href="/quotes/new" className="btn btn-primary !px-2.5 sm:!px-3" aria-label="New quote"><Plus size={16} /><span className="hidden sm:inline">New quote</span></Link>
           <ThemeToggle />
           {hydrated && <PersonaSwitch />}
         </header>

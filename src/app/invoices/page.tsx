@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import clsx from "clsx";
-import { CheckCircle2, XCircle, Send, Undo2, UserRoundCog, Plus, Trash2 } from "lucide-react";
+import { FileDown, CheckCircle2, XCircle, Send, Undo2, UserRoundCog, Plus, Trash2 } from "lucide-react";
 import { useLookups, useStore } from "@/lib/store";
 import { economics, fmtDate, invoiceSubtotal, money2, GST, MARGIN_THRESHOLD } from "@/lib/logic";
 import { Chip, Empty, InvoiceStatusBadge, MarginMeter, PageHeader } from "@/components/ui";
@@ -52,6 +52,7 @@ function Review({ inv }: { inv: Invoice }) {
         </div>
         <div className="text-right">
           <div className="num text-[22px] font-semibold">{money2(sub * (1 + GST))}</div>
+          <Link href={`/print?doc=invoice&id=${inv.id}`} className="text-[12.5px] text-primary inline-flex items-center gap-1"><FileDown size={13} />PDF</Link>
           <div className="text-[12px] text-ink-3 num">{money2(sub)} + GST {money2(sub * GST)}</div>
         </div>
       </div>

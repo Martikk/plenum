@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { useStore, type Persona } from "./store";
-import type { Invoice, WorkOrder } from "./types";
+import type { Invoice, MaintProfile, WorkOrder } from "./types";
 
 /** When unset, the app runs in local demo mode (localStorage only). */
 export const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
@@ -61,11 +61,20 @@ export async function resetRemote() {
   await pull();
 }
 
-async function push(kind: "work-orders" | "invoices", item: WorkOrder | Invoice) {
+export interface UserRow { id: number; email: string; role: Persona; person_id: number }
+export const users = {
+  list: () => call<UserRow[]>("/api/users"),
+  create: (u: { email: string; password: string; personId: number; role: Persona }) => call<UserRow>("/api/users", { method: "POST", body: JSON.stringify(u) }),
+  update: (id: number, patch: { role?: Persona; password?: string }) => call<UserRow>(`/api/users/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  remove: (id: number) => call(`/api/users/${id}`, { method: "DELETE" }),
+  changeMine: (current: string, next: string) => call("/api/me/password", { method: "POST", body: JSON.stringify({ current, next }) }),
+};
+
+async function push(kind: "work-orders" | "invoices" | "profiles" | "settings", item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
   const s = useSync.getState();
   s.set({ pending: s.pending + 1 });
   try {
-    await call(`/api/${kind}/${item.id}`, { method: "PUT", body: JSON.stringify(item) });
+    await call(kind === "settings" ? "/api/settings" : `/api/${kind}/${id}`, { method: "PUT", body: JSON.stringify(item) });
   } catch (e) {
     const err = e as ApiError;
     if (err.status === 401) return logout();
@@ -88,8 +97,10 @@ export function startSync(onAuthRequired: () => void) {
   useStore.subscribe((next, prev) => {
     if (applying || !useSync.getState().ready) return;
     const diff = <T extends { id: number }>(a: T[], b: T[]) => { const m = new Map(b.map((x) => [x.id, x])); return a.filter((x) => m.get(x.id) !== x); };
-    for (const w of diff(next.workOrders, prev.workOrders)) push("work-orders", w);
-    for (const i of diff(next.invoices, prev.invoices)) push("invoices", i);
+    for (const w of diff(next.workOrders, prev.workOrders)) push("work-orders", w, w.id);
+    for (const i of diff(next.invoices, prev.invoices)) push("invoices", i, i.id);
+    for (const p of diff(next.profiles, prev.profiles)) push("profiles", p, p.id);
+    if (next.settings !== prev.settings) push("settings", next.settings);
   });
 
   setInterval(() => {

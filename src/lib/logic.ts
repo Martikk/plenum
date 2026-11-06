@@ -3,14 +3,26 @@ import type {
 } from "./types";
 import { TECH_ROLES } from "./types";
 
-export const PST = 0.07; // BC PST on purchased materials
-export const GST = 0.05;
-export const MARGIN_THRESHOLD = 0.2; // GPP search exposes "GP% Margin: at or above 20%"
-
-/** Internal labour cost per hour (assumption — replace with payroll burden rates). */
-export const LABOUR_COST: Record<"Journeyman" | "Apprentice" | "Office", number> = {
-  Journeyman: 58, Apprentice: 34, Office: 40,
+/**
+ * Calculation settings. Defaults are assumptions (see docs/spec-notes.md "Still open");
+ * management can change them in Settings. `export let` keeps ES live bindings, so
+ * applySettings() updates every importer.
+ */
+export interface CalcSettings {
+  pst: number; gst: number; marginThreshold: number;
+  labourCost: { Journeyman: number; Apprentice: number; Office: number };
+}
+export const DEFAULT_SETTINGS: CalcSettings = {
+  pst: 0.07, gst: 0.05, marginThreshold: 0.2, labourCost: { Journeyman: 58, Apprentice: 34, Office: 40 },
 };
+export let PST = DEFAULT_SETTINGS.pst;
+export let GST = DEFAULT_SETTINGS.gst;
+export let MARGIN_THRESHOLD = DEFAULT_SETTINGS.marginThreshold;
+export let LABOUR_COST = { ...DEFAULT_SETTINGS.labourCost };
+export function applySettings(s: CalcSettings | undefined) {
+  if (!s) return;
+  PST = s.pst; GST = s.gst; MARGIN_THRESHOLD = s.marginThreshold; LABOUR_COST = { ...s.labourCost };
+}
 
 const TIME_MULT: Record<TimeType, number> = {
   Regular: 1, "OT 1.5": 1.5, "OT 2.0": 2, "Call Out 1.5": 1.5, "Call Out 2.0": 2,

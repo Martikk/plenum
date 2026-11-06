@@ -1,5 +1,5 @@
 import type {
-  Building, Contract, Equipment, Invoice, Org, Person, WorkOrder, Role, MaterialEntry, TimeEntry, HistoryItem,
+  MaintProfile, Building, Contract, Equipment, Invoice, Org, Person, WorkOrder, Role, MaterialEntry, TimeEntry, HistoryItem,
 } from "./types";
 
 /** All names, addresses and amounts below are fictional demo data. */
@@ -187,4 +187,14 @@ export const invoices: Invoice[] = [
     lines: [{ kind: "Work Noted Above", description: "Progress billing #1 – 40% of RTU-3 replacement", amount: 14200 }] },
   { id: 30990, woId: 42999, date: day(-12), status: "Paid", progress: false,
     lines: [{ kind: "Per Agreement", description: "Deposit per approved quote", amount: 600 }] },
+];
+
+const ym = (o: number) => { const d = new Date(); d.setMonth(d.getMonth() + o); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
+
+export const profiles: MaintProfile[] = [
+  { id: 701, name: "Quarterly boiler PM – The Larchway", contractId: 1002, buildingId: 101, months: [2, 5, 8, 11], hours: 4, techIds: [3, 7], equipmentIds: [501, 502], description: "Combustion analysis B-1/B-2, expansion tank pre-charge, glycol check.", active: true, generated: [ym(-3)] },
+  { id: 702, name: "DHW flush & anode – The Larchway", contractId: 1002, buildingId: 101, months: [5, 11], hours: 3, techIds: [3], equipmentIds: [503], description: "Flush DHW-1, inspect anode, test T&P.", active: true, generated: [] },
+  { id: 703, name: "Annual backflow test – Cedarpoint A", contractId: 1004, buildingId: 103, months: [4], hours: 1.5, techIds: [2], equipmentIds: [508], description: "Test BF-2, submit report to municipality.", active: true, generated: [] },
+  { id: 704, name: "Semi-annual RTU PM – Lynn Creek", contractId: 1005, buildingId: 105, months: [4, 10], hours: 3, techIds: [6], equipmentIds: [506], description: "Filters, belts, coil clean, economizer check.", active: false, generated: [] },
+  { id: 705, name: "Monthly sump check – Harbour View", contractId: 1001, buildingId: 102, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], hours: 1, techIds: [4], equipmentIds: [505], description: "Test float and alarm, clean pit screen.", active: true, generated: [ym(-1)] },
 ];
