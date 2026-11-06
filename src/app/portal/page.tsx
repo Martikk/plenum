@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import clsx from "clsx";
-import { ThumbsUp, ThumbsDown, Printer, LogOut, FileText, ClipboardCheck, Receipt, ArrowLeft, Check } from "lucide-react";
+import { Wrench, Plus, ThumbsUp, ThumbsDown, Printer, LogOut, FileText, ClipboardCheck, Receipt, ArrowLeft, Check } from "lucide-react";
 import { apiEnabled, logout, portal, storedUser, type PortalData } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { fmtDate, money2 } from "@/lib/logic";
@@ -10,7 +10,7 @@ import { Logo } from "@/components/shell";
 import { Empty } from "@/components/ui";
 import { Thumb } from "@/components/files";
 
-type Tab = "quotes" | "reports" | "invoices";
+type Tab = "requests" | "quotes" | "reports" | "invoices";
 
 function Pill({ tone, children }: { tone: string; children: React.ReactNode }) {
   return <span className="text-[12px] font-medium rounded-full px-2 py-0.5" style={{ color: `var(--s-${tone})`, background: `var(--s-${tone}-bg)` }}>{children}</span>;
@@ -100,6 +100,7 @@ export default function Portal() {
 
   const pending = data?.quotes.filter((q) => q.status === "Sent").length ?? 0;
   const tabs: [Tab, string, React.ReactNode, number][] = [
+    ["requests", "Service requests", <Wrench key="i" size={16} />, data?.requests.length ?? 0],
     ["quotes", "Quotes", <FileText key="i" size={16} />, data?.quotes.length ?? 0],
     ["reports", "Service reports", <ClipboardCheck key="i" size={16} />, data?.reports.length ?? 0],
     ["invoices", "Invoices", <Receipt key="i" size={16} />, data?.invoices.length ?? 0],
@@ -138,6 +139,7 @@ export default function Portal() {
                 </button>
               ))}
             </nav>
+            {tab === "requests" && data && <Requests data={data} canRequest={isCustomer} onDone={(id) => { setFlash(`Request #${id} received. Our dispatcher will confirm a time.`); load(); }} />}
             {tab === "quotes" && (data.quotes.length ? data.quotes.map((q) => <QuoteCard key={q.id} q={q} gst={data.gst} canDecide={isCustomer} onDone={() => { setFlash(`Thanks — your decision on quote #${q.id} was sent to our office.`); load(); }} />) : <Empty>No quotes.</Empty>)}
             {tab === "reports" && (data.reports.length ? data.reports.map((r) => (
               <article key={r.id} id={`r${r.id}`} className="card p-5 bg-surface">
@@ -167,6 +169,54 @@ export default function Portal() {
           </>
         )}
       </main>
+    </div>
+  );
+}
+
+function Requests({ data, canRequest, onDone }: { data: PortalData; canRequest: boolean; onDone: (id: number) => void }) {
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ buildingId: data.buildings[0]?.id ?? 0, description: "", urgency: "Medium", preferred: "", name: "", phone: "" });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async () => {
+    setBusy(true); setErr(null);
+    try { const r = await portal.request(f); setOpen(false); setF({ ...f, description: "", preferred: "" }); onDone(r.id); }
+    catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
+  const tone = (st: string) => st === "Completed" ? "complete" : st === "Technician on the way" ? "responding" : st === "Scheduled" ? "assigned" : st === "Follow-up needed" ? "incomplete" : "holding";
+  return (
+    <div className="space-y-3">
+      {canRequest && !open && <button className="btn btn-primary" onClick={() => setOpen(true)}><Plus size={15} />Request service</button>}
+      {open && (
+        <div className="card p-5 bg-surface grid sm:grid-cols-2 gap-3">
+          <label className="sm:col-span-2"><span className="label">Building</span>
+            <select className="field mt-1" value={f.buildingId} onChange={(e) => setF({ ...f, buildingId: Number(e.target.value) })}>{data.buildings.map((b) => <option key={b.id} value={b.id}>{b.name} — {b.address}</option>)}</select></label>
+          <label className="sm:col-span-2"><span className="label">What's the problem?</span>
+            <textarea className="field mt-1" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="e.g. No heat on floors 3–5 since this morning; boiler room alarm is on" /></label>
+          <label><span className="label">How urgent?</span>
+            <select className="field mt-1" value={f.urgency} onChange={(e) => setF({ ...f, urgency: e.target.value })}>
+              <option value="High">Urgent: no heat, no water, leak</option><option value="Medium">Soon: this week</option><option value="Low">Whenever convenient</option></select></label>
+          <label><span className="label">Preferred time / access</span><input className="field mt-1" value={f.preferred} onChange={(e) => setF({ ...f, preferred: e.target.value })} placeholder="e.g. weekdays after 9, concierge has keys" /></label>
+          <label><span className="label">Your name</span><input className="field mt-1" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
+          <label><span className="label">Phone for the technician</span><input className="field mt-1" autoComplete="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></label>
+          {err && <p className="sm:col-span-2 text-[13px]" style={{ color: "var(--danger)" }}>{err}</p>}
+          <div className="sm:col-span-2 flex justify-end gap-2">
+            <button className="btn" onClick={() => setOpen(false)}>Cancel</button>
+            <button className="btn btn-primary" disabled={busy || f.description.trim().length < 5 || f.name.trim().length < 2} onClick={submit}>{busy ? "Sending…" : "Send request"}</button>
+          </div>
+          <p className="sm:col-span-2 text-[12px] text-ink-3">For emergencies (flooding, gas smell) call us as well.</p>
+        </div>
+      )}
+      {data.requests.length === 0 ? <Empty>No requests yet.</Empty> : data.requests.map((r) => (
+        <article key={r.id} className="card p-4 bg-surface flex gap-3 items-start">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2"><span className="num text-ink-3">#{r.id}</span><Pill tone={tone(r.status)}>{r.status}</Pill></div>
+            <div className="font-semibold mt-0.5">{r.building}</div>
+            <p className="text-ink-2 text-[13.5px]">{r.request}</p>
+          </div>
+          <div className="text-right text-[12.5px] text-ink-3 num">{fmtDate(r.at)}{r.scheduled && <div className="text-ink-2">visit {new Date(r.scheduled).toLocaleString("en-CA", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })}</div>}</div>
+        </article>
+      ))}
     </div>
   );
 }

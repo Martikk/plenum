@@ -53,7 +53,7 @@ export async function pull() {
   const data = await call<Record<string, unknown>>("/api/bootstrap");
   const user = useSync.getState().user ?? storedUser();
   applying = true;
-  useStore.setState({ priceBook: [], profiles: [], ...(data as object), ...(user && user.role !== "customer" ? { persona: user.role } : {}) });
+  useStore.setState({ priceBook: [], profiles: [], notices: [], timeOff: [], ...(data as object), ...(user && user.role !== "customer" ? { persona: user.role } : {}) });
   applying = false;
   useSync.getState().set({ ready: true, user });
 }
@@ -67,11 +67,15 @@ export interface UserRow { id: number; email: string; role: Role; person_id: num
 export interface PortalData {
   org: { id: number; name: string }; gst: number;
   quotes: { id: number; status: "Sent" | "Approved" | "Declined"; sentAt?: string; building: string; address: string; request: string; recommended?: string; equipment: string[]; estimate: boolean; lines: { description: string; amount: number }[]; subtotal: number }[];
+  requests: { id: number; building: string; at: string; request: string; status: string; scheduled?: string }[];
+  buildings: { id: number; name: string; address: string }[];
   reports: { id: number; building: string; address: string; completedAt: string; request: string; workPerformed: string; techs: string[]; equipment: string[]; hours: number; files?: { id: number; name: string; mime: string }[] }[];
   invoices: { id: number; woId: number; date: string; status: "Sent" | "Paid"; building: string; po?: string; progress: boolean; lines: { kind: string; description: string; amount: number }[]; subtotal: number }[];
 }
 export const portal = {
   get: (org?: number) => call<PortalData>(`/api/portal${org ? `?org=${org}` : ""}`),
+  request: (r: { buildingId: number; description: string; urgency: string; preferred: string; name: string; phone: string }) =>
+    call<{ id: number }>("/api/portal/requests", { method: "POST", body: JSON.stringify(r) }),
   decide: (id: number, decision: "approve" | "decline", name: string, comment: string) =>
     call(`/api/portal/quotes/${id}/decision`, { method: "POST", body: JSON.stringify({ decision, name, comment }) }),
 };
@@ -84,7 +88,7 @@ export const users = {
   changeMine: (current: string, next: string) => call("/api/me/password", { method: "POST", body: JSON.stringify({ current, next }) }),
 };
 
-async function push(kind: "work-orders" | "invoices" | "profiles" | "settings" | "price" | `records/${"org" | "building" | "equipment" | "contact"}`, item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
+async function push(kind: "work-orders" | "invoices" | "profiles" | "settings" | "price" | `records/${"org" | "building" | "equipment" | "contact"}` | "simple/notices" | "simple/timeoff", item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
   const s = useSync.getState();
   s.set({ pending: s.pending + 1 });
   try {
@@ -121,6 +125,10 @@ export function startSync(onAuthRequired: () => void) {
     for (const b of diff(next.buildings, prev.buildings)) push("records/building", b, b.id);
     for (const e of diff(next.equipment, prev.equipment)) push("records/equipment", e, e.id);
     for (const p of diff(next.people, prev.people)) if (p.kind === "contact") push("records/contact", p, p.id);
+    for (const n of diff(next.notices, prev.notices)) push("simple/notices", n, n.id);
+    for (const n of prev.notices) if (!next.notices.some((x) => x.id === n.id)) call(`/api/simple/notices/${n.id}`, { method: "DELETE" }).catch((e) => useSync.getState().set({ error: e.message }));
+    for (const t of diff(next.timeOff, prev.timeOff)) push("simple/timeoff", t, t.id);
+    for (const t of prev.timeOff) if (!next.timeOff.some((x) => x.id === t.id)) call(`/api/simple/timeoff/${t.id}`, { method: "DELETE" }).catch((e) => useSync.getState().set({ error: e.message }));
     for (const p of prev.priceBook) if (!next.priceBook.some((x) => x.id === p.id)) call(`/api/price/${p.id}`, { method: "DELETE" }).catch((e) => useSync.getState().set({ error: e.message }));
   });
 

@@ -168,3 +168,9 @@ export function billing(wo: WorkOrder, c: Contract, people: Person[], invoices: 
   }
   return { value, gross, held, released, outstandingHoldback: held - released, remaining: Math.max(0, value - gross), pct: value > 0 ? gross / value : 0, count: live.filter((i) => i.progress).length };
 }
+
+/** Time off covering `date` (YYYY-MM-DD) for a person, including company-wide stat holidays (personId 0). */
+export function offOn(timeOff: { personId: number; start: string; end: string; kind: string; note?: string }[], personId: number, date: string) {
+  return timeOff.find((t) => (t.personId === personId || t.personId === 0) && t.start <= date && date <= t.end);
+}
+export const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

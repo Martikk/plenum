@@ -52,4 +52,6 @@ Set `NEXT_PUBLIC_API_URL` to the plenum-api URL at build time. The app then requ
 - **Progress billing**: contract value, billed to date, remaining and holdback on each work order; progress invoices for N% with optional holdback (10% default on Installation, BC Builders Lien Act); final invoice nets previous billings and releases holdback.
 - **Equipment history** (`/equipment?id=`): service history, last inspection/service, next PM, linked profiles.
 - **Price book** (`/pricebook`): purchase costs by SKU/name/vendor; material lines auto-fill cost on match (WO, new quote, tech mobile), "Use price book" fixes missing costs in one click; stale prices (>6 months) flagged.
+- **Production wave 1**: CSV export on every list; equipment register (`/equipment`) with serial, refrigerant/charge, filters, belts, duplicate-serial check; organization cards (`/orgs`) with parent/child roll-up; person cards (`/people`).
+- **Production wave 2**: company notices on Today; credit notes against invoices; dispatch week view; time off and stat holidays block scheduling; customer service requests from the portal land in the dispatcher's queue.
 - **Settings** (`/settings`): PST, GST, GP% threshold and internal labour cost, editable by management; user admin (create, role, password, delete), own password change and activity log in API mode.

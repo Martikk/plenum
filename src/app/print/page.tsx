@@ -62,7 +62,8 @@ function Doc() {
     const w = L.wo(inv.woId)!;
     return (
       <>
-        <Header title={inv.progress ? "Progress invoice" : "Invoice"} no={String(inv.id)} date={fmtDate(inv.date)} />
+        <Header title={inv.credit ? "Credit note" : inv.progress ? "Progress invoice" : "Invoice"} no={String(inv.id)} date={fmtDate(inv.date)} />
+        {inv.creditFor && <p className="-mt-4 mb-4 text-[13px] text-ink-2">Issued against invoice #{inv.creditFor}</p>}
         <Parties w={w} />
         <Block label="Work order">#{w.id} {typeCode(L.contract(w.contractId), "WO")}</Block>
         {w.workPerformed && <Block label="Work performed">{w.workPerformed}</Block>}

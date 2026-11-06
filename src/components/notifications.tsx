@@ -33,6 +33,9 @@ export function Notifications() {
           out.push({ id: `p${h.id}`, at: h.at, icon: ok ? <ThumbsUp size={14} /> : <ThumbsDown size={14} />, tone: ok ? "complete" : "declined", text: `Quote #${w.id} ${ok ? "approved" : "declined"} on portal · ${bname(w.buildingId)}`, href });
         }
       }
+      if (persona === "dispatcher" && w.requestedOnline && deriveStatus(w) === "Unassigned") {
+        out.push({ id: `rq${w.id}`, at: w.requestedOnline.at, icon: <CalendarPlus size={14} />, tone: "posted", text: `New portal request #${w.id} · ${bname(w.buildingId)} (${w.urgency})`, href });
+      }
       if ((persona === "coordinator" || persona === "manager") && w.kind === "QO" && w.quoteStatus === "Pricing" && w.pricingAlertAt && new Date(w.pricingAlertAt) < new Date()) {
         out.push({ id: `pa${w.id}-${w.pricingAlertAt}`, at: w.pricingAlertAt, icon: <Calculator size={14} />, tone: "responding", text: `Pricing overdue on quote #${w.id} · ${bname(w.buildingId)}`, href });
       }

@@ -108,6 +108,7 @@ export interface InvoiceLine { kind: "Labour" | "Parts" | "Per Agreement" | "Ret
 export interface Invoice {
   id: number; woId: number; date: string; status: InvoiceStatus; progress: boolean;
   lines: InvoiceLine[]; reviewNote?: string;
+  credit?: boolean; creditFor?: number; // credit note against invoice `creditFor`
 }
 
 export interface HistoryItem { id: number; at: string; by: string; kind: "Note" | "Change" | "Email Sent" | "Alert" | "File" | "Status"; text: string; }
@@ -121,6 +122,7 @@ export interface WorkOrder {
   customerRequest: string; workRecommended?: string; internalInstructions?: string; workPerformed?: string;
   quoteStatus?: QuoteStatus; quoteSentAt?: string; pricingAlertAt?: string;
   closed?: boolean; onHold?: boolean;
+  requestedOnline?: { by: string; phone?: string; preferred?: string; at: string };
   roles: Role[];
   quotedTime: TimeEntry[]; time: TimeEntry[];
   quotedMaterials: MaterialEntry[]; materials: MaterialEntry[];
@@ -144,3 +146,9 @@ export interface MaintProfile {
 export interface PriceItem {
   id: number; sku?: string; name: string; type: MaterialType; unitCost: number; vendor?: string; updatedAt: string;
 }
+
+/** Company notice shown on everyone's home screen. */
+export interface Notice { id: number; text: string; alert: boolean; by: string; createdAt: string; until?: string }
+
+/** Time off / stat holiday. personId 0 = whole company (stat holiday). Dates inclusive, YYYY-MM-DD. */
+export interface TimeOff { id: number; personId: number; start: string; end: string; kind: "Vacation" | "Sick" | "Training" | "Stat holiday" | "Other"; note?: string }

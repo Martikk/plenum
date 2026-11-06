@@ -35,7 +35,10 @@ function Review({ inv }: { inv: Invoice }) {
   const editable = inv.status === "Draft" || inv.status === "Review Reqd" || inv.status === "Changes Reqd";
   const setLine = (i: number, patch: Partial<InvoiceLine>) => s.updateInvoice(inv.id, { lines: inv.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) });
 
-  const checks = [
+  const checks = inv.credit ? [
+    { ok: sub <= 0, t: sub <= 0 ? `Credit total ${money2(sub)}` : "A credit note must total zero or less" },
+    { ok: !!inv.creditFor, t: inv.creditFor ? `Against invoice ${inv.creditFor}` : "Not linked to an invoice" },
+  ] : [
     { ok: !c.poRequired || !!w.po, t: c.poRequired ? (w.po ? `PO ${w.po} present` : "PO required by contract — missing") : "PO not required" },
     { ok: !!w.workPerformed?.trim(), t: w.workPerformed?.trim() ? "Work performed is written" : "Work performed is empty" },
     { ok: e.actual.missingCost === 0, t: e.actual.missingCost === 0 ? "All material costs entered" : `${e.actual.missingCost} material line(s) without cost` },
@@ -48,7 +51,7 @@ function Review({ inv }: { inv: Invoice }) {
     <div className="card overflow-hidden">
       <div className="p-4 border-b border-line flex flex-wrap items-start gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2"><span className="num text-ink-3">Invoice</span><span className="num font-semibold text-[18px]">{inv.id}</span><InvoiceStatusBadge s={inv.status} /></div>
+          <div className="flex items-center gap-2"><span className="num text-ink-3">{inv.credit ? "Credit note" : "Invoice"}</span><span className="num font-semibold text-[18px]">{inv.id}</span><InvoiceStatusBadge s={inv.status} />{inv.creditFor && <span className="text-[12.5px] text-ink-3">against <a className="text-primary num" href={`/invoices?open=${inv.creditFor}`}>{inv.creditFor}</a></span>}</div>
           <div className="text-ink-2 mt-0.5"><Link href={`/work-orders/view?id=${w.id}`} className="text-primary num">WO #{w.id}</Link> · {b.name} · {L.org(w.orgId)?.name}</div>
         </div>
         <div className="text-right">
@@ -112,7 +115,11 @@ function Review({ inv }: { inv: Invoice }) {
               {c.poRequired && !w.po && <button className="btn w-full justify-center" onClick={() => s.setInvoiceStatus(inv.id, "PO Requested", "PO requested from customer")}>Request PO from customer</button>}
             </div>
           )}
-          {inv.status === "Sent" && <button className="btn w-full justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Paid")}>Mark paid</button>}
+          {inv.status === "Sent" && <button className="btn w-full justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Paid")}>{inv.credit ? "Mark applied" : "Mark paid"}</button>}
+          {!inv.credit && (inv.status === "Sent" || inv.status === "Paid") && ["coordinator", "manager", "ceo"].includes(s.persona) && (
+            <button className="btn w-full justify-center" onClick={() => { const id = s.createCredit(inv.id); window.location.href = `/invoices?open=${id}`; }}>Raise credit note</button>
+          )}
+          {s.invoices.filter((x) => x.creditFor === inv.id).map((c) => <p key={c.id} className="text-[12.5px] text-ink-2">Credit note <a className="text-primary num" href={`/invoices?open=${c.id}`}>{c.id}</a> · {c.status}</p>)}
           {inv.status === "PO Requested" && <button className="btn w-full justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Review Reqd")}>PO received → back to review</button>}
         </aside>
       </div>
@@ -147,7 +154,7 @@ function InvoicesInner() {
               <button key={i.id} onClick={() => setSel(i.id)}
                 className={clsx("w-full text-left px-4 py-3 border-b border-line last:border-0 flex gap-3 items-start", current?.id === i.id ? "bg-primary-soft" : "hover:bg-sunken/60")}>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2"><span className="num font-semibold">{i.id}</span><InvoiceStatusBadge s={i.status} size="sm" />{i.progress && <span className="text-[11px] text-ink-3">progress</span>}</div>
+                  <div className="flex items-center gap-2"><span className="num font-semibold">{i.id}</span><InvoiceStatusBadge s={i.status} size="sm" />{i.progress && <span className="text-[11px] text-ink-3">progress</span>}{i.credit && <span className="text-[11px] font-medium" style={{ color: "var(--s-incomplete)" }}>credit</span>}</div>
                   <div className="truncate text-ink-2 mt-0.5">{b?.name} · WO {i.woId}</div>
                 </div>
                 <div className="text-right"><div className="num font-semibold">{money2(invoiceSubtotal(i))}</div><div className="num text-[12px] text-ink-3">{fmtDate(i.date)}</div></div>

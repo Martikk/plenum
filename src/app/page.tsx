@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { AlertTriangle, ArrowRight, CalendarClock, Calculator, Eye, Inbox, Send, Truck } from "lucide-react";
 import { PERSONAS, useLookups, useStore } from "@/lib/store";
 import { deriveStatus, economics, fmtDateTime, invoiceSubtotal, money, relTime, MARGIN_THRESHOLD } from "@/lib/logic";
+import { Notices } from "@/components/notices";
 import { Avatar, InvoiceStatusBadge, MarginMeter, RoleStatusBadge, UrgencyTag, WOStatusBadge } from "@/components/ui";
 import type { WorkOrder } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export default function Today() {
     const wos = s.workOrders.filter((w) => w.kind === "WO");
     const qos = s.workOrders.filter((w) => w.kind === "QO");
     const unassigned = wos.filter((w) => deriveStatus(w) === "Unassigned" && !w.onHold);
+    const requests = unassigned.filter((w) => w.requestedOnline);
     const onsite = wos.filter((w) => deriveStatus(w) === "Responding");
     const pricing = qos.filter((q) => q.quoteStatus === "Pricing");
     const awaiting = qos.filter((q) => q.quoteStatus === "Sent");
@@ -55,7 +57,7 @@ export default function Today() {
     const todays = wos.flatMap((w) => w.roles.filter((r) => r.start && new Date(r.start).toDateString() === today && r.personId).map((r) => ({ w, r })))
       .sort((a, b) => a.r.start!.localeCompare(b.r.start!));
     const mine = wos.filter((w) => w.roles.some((r) => r.personId === me && r.status !== "Complete" && r.status !== "Declined"));
-    return { unassigned, onsite, pricing, awaiting, review, lowMargin, todays, mine };
+    return { unassigned, requests, onsite, pricing, awaiting, review, lowMargin, todays, mine };
   }, [s.workOrders, s.invoices, s.people, me, L]);
 
   const hour = new Date().getHours();
@@ -80,8 +82,8 @@ export default function Today() {
     dispatcher: (
       <Section title={`Needs a tech (${d.unassigned.length})`} action={<Link href="/dispatch" className="btn btn-sm">Open dispatch board</Link>}>
         {d.unassigned.length === 0 ? <p className="p-4 text-ink-3">Everything is assigned.</p> :
-          d.unassigned.sort((a, b) => (a.urgency === "High" ? -1 : 1) - (b.urgency === "High" ? -1 : 1)).map((w) =>
-            row(w, <><UrgencyTag u={w.urgency} /><span className="text-[12px] text-ink-3">{relTime(w.createdAt)}</span></>))}
+          d.unassigned.sort((a, b) => Number(!!b.requestedOnline) - Number(!!a.requestedOnline) || (a.urgency === "High" ? -1 : 1) - (b.urgency === "High" ? -1 : 1)).map((w) =>
+            row(w, <>{w.requestedOnline && <span className="text-[11.5px] font-medium px-1.5 rounded-full" style={{ background: "var(--s-posted-bg)", color: "var(--s-posted)" }}>Portal request</span>}<UrgencyTag u={w.urgency} /><span className="text-[12px] text-ink-3">{relTime(w.createdAt)}</span></>))}
       </Section>
     ),
     coordinator: (
@@ -120,6 +122,8 @@ export default function Today() {
           <p className="text-ink-2">{new Date().toLocaleDateString("en-CA", { weekday: "long", month: "long", day: "numeric" })} · viewing as {PERSONAS[persona].label}</p>
         </div>
       </div>
+
+      <Notices />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Stat href="/dispatch" icon={<Inbox size={17} />} label="Unassigned work orders" value={d.unassigned.length} tone="holding" />

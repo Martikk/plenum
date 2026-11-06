@@ -8,7 +8,7 @@ import type {
   QuoteStatus, Role, RoleStatus, RoleType, TimeEntry, WorkOrder,
 } from "./types";
 import { applySettings, billing, deriveStatus, DEFAULT_SETTINGS, type CalcSettings } from "./logic";
-import type { MaintProfile, PriceItem } from "./types";
+import type { MaintProfile, Notice, PriceItem, TimeOff } from "./types";
 
 export type Persona = "dispatcher" | "coordinator" | "tech" | "manager" | "ceo";
 export const PERSONAS: Record<Persona, { label: string; personId: number; blurb: string }> = {
@@ -21,7 +21,7 @@ export const PERSONAS: Record<Persona, { label: string; personId: number; blurb:
 
 interface Data {
   orgs: Org[]; buildings: Building[]; equipment: Equipment[]; people: Person[]; contracts: Contract[];
-  workOrders: WorkOrder[]; invoices: Invoice[]; profiles: MaintProfile[]; settings: CalcSettings; priceBook: PriceItem[];
+  workOrders: WorkOrder[]; invoices: Invoice[]; profiles: MaintProfile[]; settings: CalcSettings; priceBook: PriceItem[]; notices: Notice[]; timeOff: TimeOff[];
 }
 
 interface State extends Data {
@@ -58,6 +58,12 @@ interface State extends Data {
   setSettings: (s: CalcSettings) => void;
   /** Upsert a reference record (org, building, equipment, contact). */
   saveRecord: (kind: "org" | "building" | "equipment" | "contact", rec: { id?: number } & Record<string, unknown>) => number;
+  saveNotice: (n: Omit<Notice, "id" | "by" | "createdAt"> & { id?: number }) => void;
+  removeNotice: (id: number) => void;
+  saveTimeOff: (t: Omit<TimeOff, "id"> & { id?: number }) => void;
+  removeTimeOff: (id: number) => void;
+  /** Draft credit note reversing an invoice (negated lines). */
+  createCredit: (invoiceId: number) => number;
   upsertPrice: (p: Omit<PriceItem, "id" | "updatedAt"> & { id?: number }) => void;
   removePrice: (id: number) => void;
   importItems: (kind: "org" | "building" | "equipment" | "contact" | "contract", items: { id: number }[]) => void;
@@ -66,7 +72,7 @@ interface State extends Data {
 const fresh = (): Data => structuredClone({
   orgs: seed.orgs, buildings: seed.buildings, equipment: seed.equipment, people: seed.people,
   contracts: seed.contracts, workOrders: seed.workOrders, invoices: seed.invoices,
-  profiles: seed.profiles, settings: DEFAULT_SETTINGS, priceBook: seed.priceBook,
+  profiles: seed.profiles, settings: DEFAULT_SETTINGS, priceBook: seed.priceBook, notices: seed.notices, timeOff: seed.timeOff,
 });
 
 let seq = Date.now() % 100000;
@@ -220,6 +226,27 @@ export const useStore = create<State>()(
           set({ [key]: list.some((x) => x.id === id) ? list.map((x) => (x.id === id ? item : x)) : [...list, item] } as Partial<State>);
           return id;
         },
+        saveNotice: (n) => set((s) => {
+          const id = n.id ?? Math.max(0, ...s.notices.map((x) => x.id)) + 1;
+          const prev = s.notices.find((x) => x.id === id);
+          const item: Notice = { ...n, id, by: prev?.by ?? me(), createdAt: prev?.createdAt ?? new Date().toISOString() } as Notice;
+          return { notices: prev ? s.notices.map((x) => (x.id === id ? item : x)) : [item, ...s.notices] };
+        }),
+        removeNotice: (id) => set((s) => ({ notices: s.notices.filter((x) => x.id !== id) })),
+        saveTimeOff: (t) => set((s) => {
+          const id = t.id ?? Math.max(0, ...s.timeOff.map((x) => x.id)) + 1;
+          const item = { ...t, id } as TimeOff;
+          return { timeOff: s.timeOff.some((x) => x.id === id) ? s.timeOff.map((x) => (x.id === id ? item : x)) : [...s.timeOff, item] };
+        }),
+        removeTimeOff: (id) => set((s) => ({ timeOff: s.timeOff.filter((x) => x.id !== id) })),
+        createCredit: (invoiceId) => {
+          const st = get(); const src = st.invoices.find((i) => i.id === invoiceId)!;
+          const id = Math.max(...st.invoices.map((i) => i.id)) + 1;
+          set((s) => ({ invoices: [{ id, woId: src.woId, date: new Date().toISOString().slice(0, 10), status: "Draft", progress: false, credit: true, creditFor: invoiceId,
+            lines: src.lines.map((l) => ({ ...l, description: `Credit: ${l.description}`, amount: -Math.abs(l.amount) })) }, ...s.invoices] }));
+          patchWO(src.woId, (w) => ({ ...w, history: [hist("Change", `Credit note ${id} drafted against invoice ${invoiceId}`), ...w.history] }));
+          return id;
+        },
         upsertPrice: (p) => set((s) => {
           const id = p.id ?? Math.max(0, ...s.priceBook.map((x) => x.id)) + 1;
           const item: PriceItem = { ...p, id, updatedAt: new Date().toISOString() } as PriceItem;
@@ -236,7 +263,7 @@ export const useStore = create<State>()(
     {
       name: "plenum-demo-v1",
       // Older saved states lack newer collections — fill them from seed.
-      merge: (persisted, current) => ({ ...current, ...(persisted as object), ...(!(persisted as State)?.profiles ? { profiles: current.profiles } : {}), ...(!(persisted as State)?.settings ? { settings: current.settings } : {}), ...(!(persisted as State)?.priceBook ? { priceBook: current.priceBook } : {}) }),
+      merge: (persisted, current) => ({ ...current, ...(persisted as object), ...(!(persisted as State)?.profiles ? { profiles: current.profiles } : {}), ...(!(persisted as State)?.settings ? { settings: current.settings } : {}), ...(!(persisted as State)?.priceBook ? { priceBook: current.priceBook } : {}), ...(!(persisted as State)?.notices ? { notices: current.notices } : {}), ...(!(persisted as State)?.timeOff ? { timeOff: current.timeOff } : {}) }),
       onRehydrateStorage: () => (st) => applySettings(st?.settings),
     },
   ),

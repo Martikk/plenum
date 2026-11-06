@@ -1,5 +1,5 @@
 import type {
-  PriceItem, MaintProfile, Building, Contract, Equipment, Invoice, Org, Person, WorkOrder, Role, MaterialEntry, TimeEntry, HistoryItem,
+  Notice, TimeOff, PriceItem, MaintProfile, Building, Contract, Equipment, Invoice, Org, Person, WorkOrder, Role, MaterialEntry, TimeEntry, HistoryItem,
 } from "./types";
 
 /** All names, addresses and amounts below are fictional demo data. */
@@ -216,4 +216,18 @@ export const priceBook: PriceItem[] = [
   pi(13, "DUCT-9K", "9k ductless wall head", "Equipment", 1120, "Mitsubishi Electric"),
   pi(14, "LINESET-25", "Line set 1/4 x 3/8, 25 ft + condensate pump", "Materials", 240, "Refrigerative Supply"),
   pi(15, "TRUCK", "Truck charge", "Truck Charge", 0, "Internal"),
+];
+
+export const notices: Notice[] = [
+  { id: 1, text: "On-call this weekend: Marco Bellini (HVAC) and Priya Nair (plumbing). Call-out rates apply after 4 pm Friday.", alert: true, by: "Morgan Hale", createdAt: at(-1, 9), until: day(3) },
+  { id: 2, text: "New price book is live — pick materials from the list so quotes don't go out with missing costs.", alert: false, by: "Dana Whitfield", createdAt: at(-3, 14) },
+];
+
+export const timeOff: TimeOff[] = [
+  { id: 1, personId: 4, start: day(1), end: day(2), kind: "Vacation" },
+  { id: 2, personId: 8, start: day(0), end: day(0), kind: "Training", note: "Backflow ticket course" },
+  { id: 3, personId: 0, start: "2026-11-11", end: "2026-11-11", kind: "Stat holiday", note: "Remembrance Day" },
+  { id: 4, personId: 0, start: "2026-12-25", end: "2026-12-25", kind: "Stat holiday", note: "Christmas Day" },
+  { id: 5, personId: 0, start: "2026-12-26", end: "2026-12-26", kind: "Stat holiday", note: "Boxing Day" },
+  { id: 6, personId: 0, start: "2027-01-01", end: "2027-01-01", kind: "Stat holiday", note: "New Year's Day" },
 ];

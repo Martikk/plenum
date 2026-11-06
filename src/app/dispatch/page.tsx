@@ -2,8 +2,10 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, GripVertical, Lock, AlertTriangle, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, GripVertical, Lock, AlertTriangle, Info, Palmtree } from "lucide-react";
 import { PERSONAS, useLookups, useStore } from "@/lib/store";
+import { offOn, ymd } from "@/lib/logic";
+import { TimeOffPanel } from "@/components/timeoff";
 import { Avatar, RoleStatusBadge, UrgencyTag, PageHeader } from "@/components/ui";
 import type { Person, Role, WorkOrder } from "@/lib/types";
 
@@ -21,6 +23,8 @@ export default function Dispatch() {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [hover, setHover] = useState<{ pid: number; min: number } | null>(null);
   const [toast, setToast] = useState<{ text: string; tone: "warn" | "ok" } | null>(null);
+  const [view, setView] = useState<"day" | "week">("day");
+  const [showOff, setShowOff] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
   const me = s.people.find((p) => p.id === PERSONAS[s.persona].personId)!;
@@ -59,12 +63,14 @@ export default function Dispatch() {
     return Math.round((frac * SPAN * 60) / 30) * 30;
   };
 
-  const drop = (p: Person, min: number) => {
+  const drop = (p: Person, min: number, onDate: Date = day) => {
     if (!drag) return;
+    const off = offOn(s.timeOff, p.id, ymd(onDate));
+    if (off) { flash(`${p.name} is off ${onDate.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}: ${off.kind}${off.note ? ` (${off.note})` : ""}`, "warn"); return; }
     const w = L.wo(drag.woId)!; const r = w.roles.find((x) => x.id === drag.roleId)!;
     if (!canDropOn(p)) { flash(selfOnly ? "Senior techs can schedule only themselves" : "Read-only for this persona", "warn"); return; }
     if (r.skill && r.skillRequired && !p.skills?.includes(r.skill)) { flash(`${p.name} lacks required skill: ${r.skill}`, "warn"); return; }
-    const start = new Date(day); start.setHours(START_H, 0, 0, 0); start.setMinutes(start.getMinutes() + Math.min(min, SPAN * 60 - 30));
+    const start = new Date(onDate); start.setHours(START_H, 0, 0, 0); start.setMinutes(start.getMinutes() + Math.min(min, SPAN * 60 - 30));
     const end = new Date(start.getTime() + drag.durMin * 60000);
     s.scheduleRole(w.id, r.id, p.id, start.toISOString(), end.toISOString());
     const skillNote = r.skill && !p.skills?.includes(r.skill) ? ` · note: preferred skill ${r.skill}` : "";
@@ -79,7 +85,18 @@ export default function Dispatch() {
   const nowMin = (now.getHours() - START_H) * 60 + now.getMinutes();
   const nowPct = sameDay(now, day) && nowMin >= 0 && nowMin <= SPAN * 60 ? (nowMin / (SPAN * 60)) * 100 : null;
 
-  const shift = (n: number) => setDay((d) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; });
+  const shift = (n: number) => setDay((d) => { const x = new Date(d); x.setDate(x.getDate() + n * (view === "week" ? 7 : 1)); return x; });
+  const weekStart = (() => { const d = new Date(day); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d; })();
+  const weekDays = Array.from({ length: 7 }, (_, i) => { const d = new Date(weekStart); d.setDate(d.getDate() + i); return d; });
+  const holiday = offOn(s.timeOff.filter((t) => t.personId === 0), 0, ymd(day));
+  /** Week-view drop: keep the dragged role's time of day (or 08:00), on the target date. */
+  const dropOnDay = (p: Person, d: Date) => {
+    if (!drag) return;
+    const r = L.wo(drag.woId)?.roles.find((x) => x.id === drag.roleId);
+    const t = r?.start ? new Date(r.start) : null;
+    const min = t ? (t.getHours() - START_H) * 60 + t.getMinutes() : (8 - START_H) * 60;
+    drop(p, Math.max(0, min), d);
+  };
 
   const card = (w: WorkOrder, r: Role) => {
     const b = L.building(w.buildingId);
@@ -112,8 +129,14 @@ export default function Dispatch() {
           <button className="btn !px-2" onClick={() => shift(-1)} aria-label="Previous day"><ChevronLeft size={16} /></button>
           <button className="btn" onClick={() => { const d = new Date(); d.setHours(0, 0, 0, 0); setDay(d); }}>Today</button>
           <button className="btn !px-2" onClick={() => shift(1)} aria-label="Next day"><ChevronRight size={16} /></button>
-          <span className="ml-2 font-semibold min-w-44 text-right">{day.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}</span>
+          <span className="ml-2 font-semibold min-w-44 text-right">{view === "week" ? `Week of ${weekStart.toLocaleDateString("en-CA", { month: "short", day: "numeric" })}` : day.toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric" })}</span>
+          <div className="ml-3 inline-flex rounded-md border border-line-strong overflow-hidden">
+            {(["day", "week"] as const).map((v) => <button key={v} className={clsx("px-3 h-8 text-[13px] font-medium", view === v ? "bg-primary-soft text-primary" : "bg-raised text-ink-2")} onClick={() => setView(v)}>{v === "day" ? "Day" : "Week"}</button>)}
+          </div>
+          {s.persona !== "tech" && <button className={clsx("btn ml-2", showOff && "!bg-primary-soft")} onClick={() => setShowOff(!showOff)}><Palmtree size={15} />Time off</button>}
         </div>} />
+      {holiday && view === "day" && <div className="card px-4 py-2 mb-3 text-[13.5px]" style={{ background: "var(--s-posted-bg)", color: "var(--s-posted)" }}>Stat holiday: {holiday.note ?? "company closed"}. Nobody can be scheduled.</div>}
+      {showOff && <TimeOffPanel />}
 
       <div className="grid xl:grid-cols-[320px_1fr] gap-4 items-start">
         <aside className="card overflow-hidden xl:sticky xl:top-20">
@@ -126,6 +149,52 @@ export default function Dispatch() {
           </div>
         </aside>
 
+        {view === "week" ? (
+          <section className="card overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse">
+              <thead><tr><th className="w-52 text-left label px-3 h-10 border-b border-line">Technician</th>
+                {weekDays.map((d) => { const hol = offOn(s.timeOff.filter((t) => t.personId === 0), 0, ymd(d)); return (
+                  <th key={d.toISOString()} className="text-left px-2 border-b border-l border-line text-[12px] font-semibold" style={sameDay(d, new Date()) ? { color: "var(--primary)" } : undefined}>
+                    <button className="hover:underline" onClick={() => { setDay(d); setView("day"); }}>{d.toLocaleDateString("en-CA", { weekday: "short", day: "numeric" })}</button>
+                    {hol && <div className="font-normal text-[11px]" style={{ color: "var(--s-posted)" }}>{hol.note ?? "Holiday"}</div>}
+                  </th>); })}
+              </tr></thead>
+              <tbody>{techs.map((p) => {
+                const allowed = canDropOn(p);
+                return (
+                  <tr key={p.id}>
+                    <td className="px-3 py-2 border-b border-line"><span className="inline-flex items-center gap-2"><Avatar initials={p.initials} size={24} /><span className="font-medium">{p.name}</span></span></td>
+                    {weekDays.map((d) => {
+                      const off = offOn(s.timeOff, p.id, ymd(d));
+                      const items = s.workOrders.filter((w) => w.kind === "WO" && !w.closed).flatMap((w) => w.roles.filter((r) => r.personId === p.id && r.start && sameDay(new Date(r.start), d)).map((r) => ({ w, r })))
+                        .sort((a, b) => a.r.start!.localeCompare(b.r.start!));
+                      const hrs = items.reduce((a, { r }) => a + (r.end ? (new Date(r.end).getTime() - new Date(r.start!).getTime()) / 36e5 : 0), 0);
+                      return (
+                        <td key={d.toISOString()} className={clsx("align-top p-1.5 border-b border-l border-line h-20", drag && allowed && !off && "bg-primary-soft/40")}
+                          style={off ? { background: "repeating-linear-gradient(135deg, var(--sunken) 0 6px, transparent 6px 12px)" } : undefined}
+                          onDragOver={(e) => { if (drag) e.preventDefault(); }}
+                          onDrop={(e) => { e.preventDefault(); dropOnDay(p, d); setDrag(null); }}>
+                          {off && <div className="text-[11px] font-medium mb-1 flex items-center gap-1" style={{ color: items.length ? "var(--danger)" : "var(--text-2)" }}>{items.length > 0 && <AlertTriangle size={11} />}{off.kind}{items.length > 0 ? " · booked while off" : ""}</div>}
+                          {items.map(({ w, r }) => {
+                            const st = r.status === "Complete" ? "complete" : r.status === "Responding" ? "responding" : r.status === "Incomplete" ? "incomplete" : "assigned";
+                            return (
+                              <Link key={r.id} href={`/work-orders/view?id=${w.id}`} draggable={!readOnly && (!selfOnly || p.id === me.id)}
+                                onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; setDrag({ woId: w.id, roleId: r.id, durMin: r.end ? (new Date(r.end).getTime() - new Date(r.start!).getTime()) / 60000 : 120 }); }}
+                                onDragEnd={() => setDrag(null)}
+                                title={`${L.building(w.buildingId)?.name} — ${w.customerRequest}`}
+                                className="block rounded px-1.5 py-0.5 mb-1 text-[11.5px] border-l-[3px] truncate"
+                                style={{ background: `var(--s-${st}-bg)`, borderColor: `var(--s-${st})` }}>
+                                <span className="num">{new Date(r.start!).toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit", hour12: false })}</span> #{w.id}
+                              </Link>);
+                          })}
+                          {hrs > 0 && <div className="text-[10.5px] text-ink-3 num">{hrs.toFixed(1)} h</div>}
+                        </td>);
+                    })}
+                  </tr>);
+              })}</tbody>
+            </table>
+          </section>
+        ) : (
         <section className="card overflow-x-auto">
           <div className="min-w-[900px]">
             <div className="flex border-b border-line sticky top-0 bg-surface z-10">
@@ -145,6 +214,7 @@ export default function Dispatch() {
                   const mine = blocks.filter((b) => b.r.personId === p.id);
                   const hours = mine.reduce((a, b) => a + (new Date(b.r.end!).getTime() - new Date(b.r.start!).getTime()) / 36e5, 0);
                   const allowed = canDropOn(p);
+                  const off = offOn(s.timeOff, p.id, ymd(day));
                   return (
                     <div key={p.id} className="flex border-b border-line last:border-0" style={{ height: ROW_H }}>
                       <div className="w-52 shrink-0 px-3 flex items-center gap-2 border-r border-line">
@@ -163,6 +233,7 @@ export default function Dispatch() {
                         {Array.from({ length: SPAN }).map((_, i) => (
                           <span key={i} className="absolute inset-y-0 border-l border-line/70" style={{ left: `${(i / SPAN) * 100}%` }} />
                         ))}
+                        {off && <span className="absolute inset-0 z-0 flex items-end pb-0.5 pl-3 text-[11px] font-medium text-ink-2" style={{ background: "repeating-linear-gradient(135deg, var(--sunken) 0 6px, transparent 6px 12px)" }}>Off · {off.kind}{off.note ? ` · ${off.note}` : ""}</span>}
                         {nowPct != null && <span className="absolute inset-y-0 w-0.5 z-[2]" style={{ left: `${nowPct}%`, background: "var(--danger)" }} />}
                         {hover && hover.pid === p.id && drag && (
                           <span className="absolute top-1.5 bottom-1.5 rounded-md border-2 border-dashed z-[3]"
@@ -195,6 +266,7 @@ export default function Dispatch() {
             ))}
           </div>
         </section>
+        )}
       </div>
 
       <p className="mt-3 text-[12.5px] text-ink-3 inline-flex items-center gap-1.5"><Info size={13} />
