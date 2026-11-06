@@ -1,3 +1,6 @@
 [build]
   command = "npm run build"
   publish = "out"
+
+[build.environment]
+  NEXT_PUBLIC_API_URL = "https://plenum-api-045a77e0c8f2.herokuapp.com"
