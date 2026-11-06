@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, CalendarRange, ClipboardList, FileText, Receipt, ScrollText, Building2, Search, Plus,
-  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon,
+  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon, Globe,
 } from "lucide-react";
 import { PERSONAS, useHydrated, useStore, type Persona } from "@/lib/store";
 import { deriveStatus } from "@/lib/logic";
@@ -36,6 +36,7 @@ const NAV = [
   { href: "/buildings", label: "Buildings", icon: Building2 },
   { href: "/maintenance", label: "Maintenance", icon: CalendarClock },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
+  { href: "/portal", label: "Customer portal", icon: Globe },
 ];
 
 function useCounts() {
@@ -207,7 +208,9 @@ export function Shell({ children }: { children: ReactNode }) {
   const isLogin = path === "/login";
   useEffect(() => { if (hydrated && !isLogin) startSync(() => router.replace("/login")); }, [hydrated, isLogin, router]);
   const ready = hydrated && (isLogin || sync.ready);
-  if (path === "/print") return ready ? <>{children}</> : <div className="p-6 text-ink-3">Loading…</div>;
+  const isCustomer = sync.user?.role === "customer";
+  useEffect(() => { if (isCustomer && path !== "/portal" && path !== "/login") router.replace("/portal"); }, [isCustomer, path, router]);
+  if (path === "/print" || path === "/portal" || isCustomer) return ready ? <>{children}</> : <div className="p-6 text-ink-3">Loading…</div>;
   return (
     <div className="min-h-screen flex">
       <aside className="hidden md:flex w-[220px] shrink-0 flex-col border-r border-line bg-surface sticky top-0 h-screen">

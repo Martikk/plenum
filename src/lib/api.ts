@@ -11,8 +11,11 @@ const TOKEN_KEY = "plenum-token";
 export const getToken = () => { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } };
 const setToken = (t: string | null) => { try { if (t) localStorage.setItem(TOKEN_KEY, t); else localStorage.removeItem(TOKEN_KEY); } catch {} };
 
+export type Role = Persona | "customer";
+export const storedUser = (): { email: string; role: Role } | null => { try { return JSON.parse(localStorage.getItem("plenum-user") ?? "null"); } catch { return null; } };
+
 interface SyncState {
-  ready: boolean; pending: number; error: string | null; user: { email: string; role: Persona } | null;
+  ready: boolean; pending: number; error: string | null; user: { email: string; role: Role } | null;
   set: (p: Partial<SyncState>) => void;
 }
 export const useSync = create<SyncState>()((set) => ({ ready: !apiEnabled, pending: 0, error: null, user: null, set: (p) => set(p) }));
@@ -30,7 +33,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export async function login(email: string, password: string) {
-  const r = await call<{ token: string; user: { email: string; role: Persona } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+  const r = await call<{ token: string; user: { email: string; role: Role } }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
   setToken(r.token);
   try { localStorage.setItem("plenum-user", JSON.stringify(r.user)); } catch {}
   useSync.getState().set({ user: r.user });
@@ -48,10 +51,9 @@ let applying = false;
 
 export async function pull() {
   const data = await call<Record<string, unknown>>("/api/bootstrap");
-  let user = useSync.getState().user;
-  if (!user) { try { user = JSON.parse(localStorage.getItem("plenum-user") ?? "null"); } catch {} }
+  const user = useSync.getState().user ?? storedUser();
   applying = true;
-  useStore.setState({ ...(data as object), ...(user ? { persona: user.role } : {}) });
+  useStore.setState({ ...(data as object), ...(user && user.role !== "customer" ? { persona: user.role } : {}) });
   applying = false;
   useSync.getState().set({ ready: true, user });
 }
@@ -61,11 +63,23 @@ export async function resetRemote() {
   await pull();
 }
 
-export interface UserRow { id: number; email: string; role: Persona; person_id: number }
+export interface UserRow { id: number; email: string; role: Role; person_id: number; org_id: number | null }
+export interface PortalData {
+  org: { id: number; name: string }; gst: number;
+  quotes: { id: number; status: "Sent" | "Approved" | "Declined"; sentAt?: string; building: string; address: string; request: string; recommended?: string; equipment: string[]; estimate: boolean; lines: { description: string; amount: number }[]; subtotal: number }[];
+  reports: { id: number; building: string; address: string; completedAt: string; request: string; workPerformed: string; techs: string[]; equipment: string[]; hours: number }[];
+  invoices: { id: number; woId: number; date: string; status: "Sent" | "Paid"; building: string; po?: string; progress: boolean; lines: { kind: string; description: string; amount: number }[]; subtotal: number }[];
+}
+export const portal = {
+  get: (org?: number) => call<PortalData>(`/api/portal${org ? `?org=${org}` : ""}`),
+  decide: (id: number, decision: "approve" | "decline", name: string, comment: string) =>
+    call(`/api/portal/quotes/${id}/decision`, { method: "POST", body: JSON.stringify({ decision, name, comment }) }),
+};
+
 export const users = {
   list: () => call<UserRow[]>("/api/users"),
-  create: (u: { email: string; password: string; personId: number; role: Persona }) => call<UserRow>("/api/users", { method: "POST", body: JSON.stringify(u) }),
-  update: (id: number, patch: { role?: Persona; password?: string }) => call<UserRow>(`/api/users/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  create: (u: { email: string; password: string; personId: number; role: Role; orgId?: number }) => call<UserRow>("/api/users", { method: "POST", body: JSON.stringify(u) }),
+  update: (id: number, patch: { role?: Role; password?: string }) => call<UserRow>(`/api/users/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: number) => call(`/api/users/${id}`, { method: "DELETE" }),
   changeMine: (current: string, next: string) => call("/api/me/password", { method: "POST", body: JSON.stringify({ current, next }) }),
 };
@@ -91,6 +105,7 @@ let started = false;
 export function startSync(onAuthRequired: () => void) {
   if (!apiEnabled || started) return;
   if (!getToken()) { onAuthRequired(); return; }
+  if (storedUser()?.role === "customer") { useSync.getState().set({ ready: true, user: storedUser() }); return; }
   started = true;
   pull().catch((e: ApiError) => { started = false; if (e.status === 401) logout(); else useSync.getState().set({ error: e.message }); });
 

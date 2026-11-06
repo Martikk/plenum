@@ -10,6 +10,7 @@ const DEMO = [
   ["tech@plenum.demo", "Senior Tech"],
   ["manager@plenum.demo", "Coordination Manager"],
   ["ceo@plenum.demo", "CEO"],
+  ["customer@plenum.demo", "Customer (portal)"],
 ];
 
 export default function Login() {
@@ -22,7 +23,7 @@ export default function Login() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setBusy(true); setErr(null);
-    try { await login(email, password); window.location.href = "/"; }
+    try { const u = await login(email, password); window.location.href = u.role === "customer" ? "/portal" : "/"; }
     catch (x) { setErr((x as Error).message); }
     finally { setBusy(false); }
   };
