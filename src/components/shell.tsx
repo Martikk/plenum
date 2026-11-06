@@ -209,10 +209,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const sync = useSync();
   const isLogin = path === "/login";
-  useEffect(() => { if (hydrated && !isLogin) startSync(() => router.replace("/login")); }, [hydrated, isLogin, router]);
-  const ready = hydrated && (isLogin || sync.ready);
+  const isPublic = path === "/features";
+  useEffect(() => { if (hydrated && !isLogin && !isPublic) startSync(() => router.replace("/login")); }, [hydrated, isLogin, isPublic, router]);
+  const ready = hydrated && (isLogin || isPublic || sync.ready);
   const isCustomer = sync.user?.role === "customer";
-  useEffect(() => { if (isCustomer && path !== "/portal" && path !== "/login") router.replace("/portal"); }, [isCustomer, path, router]);
+  useEffect(() => { if (isCustomer && path !== "/portal" && path !== "/login" && !isPublic) router.replace("/portal"); }, [isCustomer, path, router, isPublic]);
+  if (isPublic) return <>{children}</>;
   if (path === "/print" || path === "/portal" || isCustomer) return ready ? <>{children}</> : <div className="p-6 text-ink-3">Loading…</div>;
   return (
     <div className="min-h-screen flex">
