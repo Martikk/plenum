@@ -158,7 +158,7 @@ Snapshot: 2026-11-06.
 | Projects & wiki | ✗ | |
 
 ## Summary
-Roughly **40 ✅, 35 ◐, 55 ✗** of ~130 catalog lines. The core path (quote → WO → schedule → field → margin → invoice → portal) is covered end-to-end. Main gaps by business value:
+**38 ✅, 31 ◐, 52 ✗** of 121 catalog lines (+1 n/a). The core path (quote → WO → schedule → field → margin → invoice → portal) is covered end-to-end. Main gaps by business value:
 1. **Email** (quote follow-ups, status reminders, sending invoices). Needs an email provider.
 2. **Accounting export** (QuickBooks, payroll). Needs a decision on target system and format.
 3. **Scheduling depth**: week/month views, time off/holidays, resize.
