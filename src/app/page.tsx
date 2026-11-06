@@ -76,7 +76,7 @@ export default function Today() {
     );
   };
 
-  const queues: Record<typeof persona, React.ReactNode> = {
+  const queues: Record<Exclude<typeof persona, "ceo">, React.ReactNode> = {
     dispatcher: (
       <Section title={`Needs a tech (${d.unassigned.length})`} action={<Link href="/dispatch" className="btn btn-sm">Open dispatch board</Link>}>
         {d.unassigned.length === 0 ? <p className="p-4 text-ink-3">Everything is assigned.</p> :
@@ -131,7 +131,7 @@ export default function Today() {
 
       <div className="grid lg:grid-cols-[1.25fr_1fr] gap-5 items-start">
         <div className="space-y-5">
-          {queues[persona]}
+          {queues[persona === "ceo" ? "manager" : persona]}
           <Section title="Margin alerts" action={<span className="text-[12px] text-ink-3">GP below {MARGIN_THRESHOLD * 100}%</span>}>
             {d.lowMargin.length === 0 ? <p className="p-4 text-ink-3">All billable jobs at or above threshold.</p> :
               d.lowMargin.map((w) => {

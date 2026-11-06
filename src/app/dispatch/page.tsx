@@ -25,7 +25,7 @@ export default function Dispatch() {
 
   const me = s.people.find((p) => p.id === PERSONAS[s.persona].personId)!;
   const selfOnly = s.persona === "tech";
-  const readOnly = s.persona === "manager" || s.persona === "coordinator";
+  const readOnly = s.persona === "manager" || s.persona === "coordinator" || s.persona === "ceo";
 
   const techs = s.people.filter((p) => p.kind === "staff" && (p.group === "Journeyman" || p.group === "Apprentice"));
   const groups: [string, Person[]][] = [["Journeyman", techs.filter((p) => p.group === "Journeyman")], ["Apprentice", techs.filter((p) => p.group === "Apprentice")]];

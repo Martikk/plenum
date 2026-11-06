@@ -36,3 +36,6 @@ Next.js 15 (App Router) · React 19 · Tailwind CSS 4 · Zustand (persisted) · 
 
 ## Next steps (not built)
 Postgres + auth (roles/permissions), customer portal, maintenance profiles → auto PM work orders, PDF quote/WO/invoice, accounting sync, mobile tech view.
+
+## Backend mode
+Set `NEXT_PUBLIC_API_URL` to the plenum-api URL at build time. The app then requires sign-in, loads data from the API, pushes every change back, and rolls back if the server rejects it. Without the variable it runs in local demo mode.

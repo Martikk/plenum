@@ -28,6 +28,7 @@ function Review({ inv }: { inv: Invoice }) {
   const b = L.building(w.buildingId)!;
   const e = economics(w, c, s.people, s.invoices);
   const [note, setNote] = useState("");
+  const canApprove = s.persona === "manager" || s.persona === "ceo";
   const sub = invoiceSubtotal(inv);
   const thisMargin = sub > 0 ? (sub - e.actual.totalCostPst) / sub : null;
   const editable = inv.status === "Draft" || inv.status === "Review Reqd" || inv.status === "Changes Reqd";
@@ -97,9 +98,11 @@ function Review({ inv }: { inv: Invoice }) {
           {(inv.status === "Review Reqd" || inv.status === "Changes Reqd") && (
             <div className="space-y-2">
               <textarea className="field" placeholder="Note for tech / CEO (optional)" value={note} onChange={(ev) => setNote(ev.target.value)} />
-              <button className="btn btn-primary w-full justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Sent", note || undefined)}>
-                <Send size={15} />Approve &amp; email customer{failing ? ` (${failing} check${failing > 1 ? "s" : ""} failing)` : ""}
-              </button>
+              {canApprove ? (
+                <button className="btn btn-primary w-full justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Sent", note || undefined)}>
+                  <Send size={15} />Approve &amp; email customer{failing ? ` (${failing} check${failing > 1 ? "s" : ""} failing)` : ""}
+                </button>
+              ) : <p className="text-[12.5px] text-ink-3">Only the Coordination Manager or CEO can approve and send.</p>}
               <div className="grid grid-cols-2 gap-2">
                 <button className="btn justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Changes Reqd", note || "Changes requested")}><Undo2 size={15} />Changes</button>
                 <button className="btn justify-center" onClick={() => s.setInvoiceStatus(inv.id, "Review Reqd", `Escalated to CEO${note ? `: ${note}` : ""}`)}><UserRoundCog size={15} />Ask CEO</button>

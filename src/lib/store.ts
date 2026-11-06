@@ -9,12 +9,13 @@ import type {
 } from "./types";
 import { deriveStatus } from "./logic";
 
-export type Persona = "dispatcher" | "coordinator" | "tech" | "manager";
+export type Persona = "dispatcher" | "coordinator" | "tech" | "manager" | "ceo";
 export const PERSONAS: Record<Persona, { label: string; personId: number; blurb: string }> = {
   dispatcher: { label: "Dispatch", personId: 21, blurb: "Schedules most work orders" },
   coordinator: { label: "Service Coordinator", personId: 20, blurb: "Prices quotes, sources parts" },
   tech: { label: "Senior Tech", personId: 1, blurb: "Self-schedules, creates and sends quotes" },
   manager: { label: "Coordination Manager", personId: 22, blurb: "Reviews every invoice before it goes out" },
+  ceo: { label: "CEO", personId: 23, blurb: "Advises on contentious invoices" },
 };
 
 interface Data {
@@ -134,9 +135,8 @@ export const useStore = create<State>()(
           return id;
         },
         setInvoiceStatus: (id, st, note) => {
-          const inv = get().invoices.find((i) => i.id === id)!;
           set((s) => ({ invoices: s.invoices.map((i) => (i.id === id ? { ...i, status: st, reviewNote: note ?? i.reviewNote } : i)) }));
-          patchWO(inv.woId, (w) => ({ ...w, history: [hist(st === "Sent" ? "Email Sent" : "Status", `Invoice ${id} → ${st}${note ? ` · ${note}` : ""}`), ...w.history] }));
+          // Not mirrored into WO history: the invoice change may be rejected by the server; the API keeps an audit log.
         },
         updateInvoice: (id, patch) => set((s) => ({ invoices: s.invoices.map((i) => (i.id === id ? { ...i, ...patch } : i)) })),
         toggleHold: (woId) => patchWO(woId, (w) => ({ ...w, onHold: !w.onHold, history: [hist("Change", w.onHold ? "Released from hold" : "Put on hold"), ...w.history] })),

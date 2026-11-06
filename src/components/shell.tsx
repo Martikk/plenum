@@ -10,6 +10,8 @@ import {
 import { PERSONAS, useHydrated, useStore, type Persona } from "@/lib/store";
 import { deriveStatus } from "@/lib/logic";
 import { Avatar } from "./ui";
+import { apiEnabled, logout, resetRemote, startSync, useSync } from "@/lib/api";
+import { LogOut, CloudOff, Cloud, X } from "lucide-react";
 
 export function Logo({ size = 26 }: { size?: number }) {
   // Plenum: a chamber where many ducts meet — three flows converging into one outlet.
@@ -64,14 +66,14 @@ function ThemeToggle() {
 function PersonaSwitch() {
   const { persona, setPersona, people } = useStore();
   const [open, setOpen] = useState(false);
-  const p = people.find((x) => x.id === PERSONAS[persona].personId);
+  const p = people.find((x) => x.id === PERSONAS[persona]?.personId);
   return (
     <div className="relative">
       <button className="btn btn-ghost !h-9 !pl-1.5" onClick={() => setOpen(!open)}>
         {p && <Avatar initials={p.initials} size={26} />}
         <span className="text-left leading-tight hidden sm:block">
           <span className="block text-[13px] font-semibold">{p?.name}</span>
-          <span className="block text-[11.5px] text-ink-3">{PERSONAS[persona].label}</span>
+          <span className="block text-[11.5px] text-ink-3">{PERSONAS[persona]?.label}</span>
         </span>
         <ChevronDown size={14} className="text-ink-3" />
       </button>
@@ -80,7 +82,9 @@ function PersonaSwitch() {
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-1 w-72 card shadow-pop z-50 p-1">
             <div className="px-3 py-2 label">View as (demo)</div>
-            {(Object.keys(PERSONAS) as Persona[]).map((k) => (
+            {apiEnabled ? (
+              <div className="px-3 pb-2 text-[13px] text-ink-2">Signed in as {useSync.getState().user?.email ?? "—"}</div>
+            ) : (Object.keys(PERSONAS) as Persona[]).map((k) => (
               <button key={k} onClick={() => { setPersona(k); setOpen(false); }}
                 className={clsx("w-full text-left px-3 py-2 rounded-md hover:bg-sunken", persona === k && "bg-primary-soft")}>
                 <div className="font-medium">{PERSONAS[k].label}</div>
@@ -88,10 +92,17 @@ function PersonaSwitch() {
               </button>
             ))}
             <div className="border-t border-line mt-1 pt-1">
-              <button className="w-full text-left px-3 py-2 rounded-md hover:bg-sunken text-ink-2 inline-flex items-center gap-2"
-                onClick={() => { useStore.getState().reset(); setOpen(false); }}>
-                <RotateCcw size={14} /> Reset demo data
-              </button>
+              {(!apiEnabled || persona === "manager" || persona === "ceo") && (
+                <button className="w-full text-left px-3 py-2 rounded-md hover:bg-sunken text-ink-2 inline-flex items-center gap-2"
+                  onClick={() => { if (apiEnabled) { if (confirm("Reset shared demo data for everyone?")) resetRemote(); } else useStore.getState().reset(); setOpen(false); }}>
+                  <RotateCcw size={14} /> Reset demo data
+                </button>
+              )}
+              {apiEnabled && (
+                <button className="w-full text-left px-3 py-2 rounded-md hover:bg-sunken text-ink-2 inline-flex items-center gap-2" onClick={logout}>
+                  <LogOut size={14} /> Sign out
+                </button>
+              )}
             </div>
           </div>
         </>
@@ -188,6 +199,11 @@ export function Shell({ children }: { children: ReactNode }) {
   const [woId, setWoId] = useState<string | null>(null);
   useEffect(() => { setWoId(path === "/work-orders/view" ? new URLSearchParams(window.location.search).get("id") : null); });
   const isQuotePath = !!woId && useStore.getState().workOrders.find((w) => w.id === Number(woId))?.kind === "QO";
+  const router = useRouter();
+  const sync = useSync();
+  const isLogin = path === "/login";
+  useEffect(() => { if (hydrated && !isLogin) startSync(() => router.replace("/login")); }, [hydrated, isLogin, router]);
+  const ready = hydrated && (isLogin || sync.ready);
   return (
     <div className="min-h-screen flex">
       <aside className="hidden md:flex w-[220px] shrink-0 flex-col border-r border-line bg-surface sticky top-0 h-screen">
@@ -212,7 +228,9 @@ export function Shell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="p-3 text-[11.5px] text-ink-3 border-t border-line">Demo build · fictional data</div>
+        <div className="p-3 text-[11.5px] text-ink-3 border-t border-line inline-flex items-center gap-1.5">
+          {apiEnabled ? <><Cloud size={13} />{sync.pending ? "Saving…" : "Synced"} · fictional data</> : <><CloudOff size={13} />Local demo · fictional data</>}
+        </div>
       </aside>
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 sticky top-0 z-30 bg-surface/90 backdrop-blur border-b border-line flex items-center gap-3 px-4">
@@ -229,7 +247,13 @@ export function Shell({ children }: { children: ReactNode }) {
               (href === "/" ? path === "/" : path.startsWith(href)) ? "bg-primary-soft text-primary" : "text-ink-2")}>{label}</Link>
           ))}
         </nav>
-        <main className="flex-1 p-4 md:p-6 max-w-[1600px] w-full mx-auto">{hydrated ? children : <div className="text-ink-3">Loading…</div>}</main>
+        <main className="flex-1 p-4 md:p-6 max-w-[1600px] w-full mx-auto">{ready ? children : <div className="text-ink-3">Loading…</div>}</main>
+        {sync.error && (
+          <div className="fixed bottom-5 right-5 z-50 card shadow-pop px-4 py-3 flex items-start gap-2 max-w-md" style={{ background: "var(--danger-bg)", color: "var(--danger)", borderColor: "var(--danger)" }}>
+            <span className="font-medium flex-1">{sync.error}</span>
+            <button aria-label="Dismiss" onClick={() => sync.set({ error: null })}><X size={15} /></button>
+          </div>
+        )}
       </div>
     </div>
   );
