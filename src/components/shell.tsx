@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, CalendarRange, ClipboardList, FileText, Receipt, ScrollText, Building2, Search, Plus,
-  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon, Globe, BarChart3, Tags,
+  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon, Globe, BarChart3, Tags, Wrench, Landmark, Users,
 } from "lucide-react";
 import { PERSONAS, useHydrated, useStore, type Persona } from "@/lib/store";
 import { deriveStatus } from "@/lib/logic";
@@ -34,7 +34,10 @@ const NAV = [
   { href: "/quotes", label: "Quotes", icon: FileText },
   { href: "/invoices", label: "Invoices", icon: Receipt },
   { href: "/contracts", label: "Contracts", icon: ScrollText },
+  { href: "/orgs", label: "Organizations", icon: Landmark },
+  { href: "/people", label: "People", icon: Users },
   { href: "/buildings", label: "Buildings", icon: Building2 },
+  { href: "/equipment", label: "Equipment", icon: Wrench },
   { href: "/maintenance", label: "Maintenance", icon: CalendarClock },
   { href: "/pricebook", label: "Price book", icon: Tags },
   { href: "/reports", label: "Reports", icon: BarChart3 },
@@ -223,7 +226,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <Logo />
           <span className="text-[17px] font-semibold tracking-tight">Plenum</span>
         </Link>
-        <nav className="p-2 flex-1 space-y-0.5">
+        <nav className="p-2 flex-1 space-y-0.5 overflow-y-auto">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? path === "/" : path.startsWith(href) || (href === "/quotes" && isQuotePath) || false;
             const suppress = href === "/work-orders" && isQuotePath;

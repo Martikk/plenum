@@ -56,6 +56,8 @@ interface State extends Data {
   /** Create PM work orders for every active profile due in `ym` ("YYYY-MM"). Returns created WO ids. */
   generatePM: (ym: string) => number[];
   setSettings: (s: CalcSettings) => void;
+  /** Upsert a reference record (org, building, equipment, contact). */
+  saveRecord: (kind: "org" | "building" | "equipment" | "contact", rec: { id?: number } & Record<string, unknown>) => number;
   upsertPrice: (p: Omit<PriceItem, "id" | "updatedAt"> & { id?: number }) => void;
   removePrice: (id: number) => void;
   importItems: (kind: "org" | "building" | "equipment" | "contact" | "contract", items: { id: number }[]) => void;
@@ -210,6 +212,14 @@ export const useStore = create<State>()(
           return created.map((w) => w.id);
         },
         setSettings: (settings) => { applySettings(settings); set({ settings }); },
+        saveRecord: (kind, rec) => {
+          const key = ({ org: "orgs", building: "buildings", equipment: "equipment", contact: "people" } as const)[kind];
+          const list = get()[key] as { id: number }[];
+          const id = rec.id ?? Math.max(0, ...list.map((x) => x.id)) + 1;
+          const item = { ...(list.find((x) => x.id === id) ?? {}), ...rec, id, ...(kind === "contact" ? { kind: "contact" } : {}) };
+          set({ [key]: list.some((x) => x.id === id) ? list.map((x) => (x.id === id ? item : x)) : [...list, item] } as Partial<State>);
+          return id;
+        },
         upsertPrice: (p) => set((s) => {
           const id = p.id ?? Math.max(0, ...s.priceBook.map((x) => x.id)) + 1;
           const item: PriceItem = { ...p, id, updatedAt: new Date().toISOString() } as PriceItem;

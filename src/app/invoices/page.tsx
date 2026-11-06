@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import clsx from "clsx";
-import { FileDown, CheckCircle2, XCircle, Send, Undo2, UserRoundCog, Plus, Trash2 } from "lucide-react";
+import { Download, FileDown, CheckCircle2, XCircle, Send, Undo2, UserRoundCog, Plus, Trash2 } from "lucide-react";
 import { useLookups, useStore } from "@/lib/store";
+import { downloadCSV } from "@/lib/csv";
 import { economics, fmtDate, invoiceSubtotal, money2, GST, MARGIN_THRESHOLD } from "@/lib/logic";
 import { Chip, Empty, InvoiceStatusBadge, MarginMeter, PageHeader } from "@/components/ui";
 import type { Invoice, InvoiceLine, InvoiceStatus } from "@/lib/types";
@@ -133,7 +134,8 @@ function InvoicesInner() {
 
   return (
     <div>
-      <PageHeader title="Invoices" sub="Every invoice is reviewed by the Coordination Manager before it is emailed to the customer; contentious ones go to the CEO." />
+      <PageHeader title="Invoices" sub="Every invoice is reviewed by the Coordination Manager before it is emailed to the customer; contentious ones go to the CEO." actions={<button className="btn" onClick={() => downloadCSV("invoices", ["Invoice", "Status", "Date", "WO", "Building", "Organization", "PO", "Progress", "Subtotal", "GST", "Total"],
+        list.map((i) => { const w = L.wo(i.woId); const sub = invoiceSubtotal(i); return [i.id, i.status, i.date, i.woId, L.building(w?.buildingId)?.name, L.org(w?.orgId)?.name, w?.po, i.progress ? "yes" : "", sub.toFixed(2), (sub * GST).toFixed(2), (sub * (1 + GST)).toFixed(2)]; }))}><Download size={15} />CSV</button>} />
       <div className="flex flex-wrap gap-2 mb-3">
         {FILTERS.map((k) => <Chip key={k} active={f === k} onClick={() => setF(k)} count={s.invoices.filter((i) => (k === "all" ? true : k === "queue" ? inQueue(i) : i.status === k)).length}>{k === "queue" ? "Review queue" : k === "all" ? "All" : k}</Chip>)}
       </div>

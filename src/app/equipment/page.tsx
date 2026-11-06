@@ -6,6 +6,7 @@ import { ArrowLeft, Wrench, CalendarClock, Plus } from "lucide-react";
 import { useLookups, useStore } from "@/lib/store";
 import { deriveStatus, fmtDate } from "@/lib/logic";
 import { Empty, QuoteStatusBadge, WOStatusBadge } from "@/components/ui";
+import { EquipmentList, EquipmentSpecs } from "@/components/equipment-ui";
 
 const M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -13,6 +14,7 @@ function EquipmentView() {
   const id = Number(useSearchParams().get("id"));
   const s = useStore(); const L = useLookups();
   const e = L.equip(id);
+  if (!id) return <EquipmentList />;
   if (!e) return <Empty>Equipment not found. <Link className="text-primary" href="/buildings">Buildings</Link></Empty>;
   const b = L.building(e.buildingId)!;
   const history = s.workOrders.filter((w) => w.equipmentIds.includes(id)).sort((a, z) => z.createdAt.localeCompare(a.createdAt));
@@ -42,6 +44,8 @@ function EquipmentView() {
           ))}
         </div>
       </div>
+
+      <EquipmentSpecs key={`${e.id}-${JSON.stringify(e).length}`} e={e} />
 
       <section className="card overflow-hidden">
         <div className="px-4 h-11 flex items-center border-b border-line font-semibold">Service history ({history.length})</div>

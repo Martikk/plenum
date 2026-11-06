@@ -13,9 +13,9 @@ function at(dayOffset: number, hour = 9, min = 0) {
 const day = (o: number) => at(o, 12).slice(0, 10);
 
 export const orgs: Org[] = [
-  { id: 1, name: "Harbourline Property Management", category: "Property Management Company", accountCode: "4101" },
-  { id: 2, name: "Strata VR2210 – The Larchway", category: "Customer", accountCode: "4102" },
-  { id: 3, name: "Cedarpoint Living", category: "Property Management Company", accountCode: "4103" },
+  { id: 1, name: "Harbourline Property Management", category: "Property Management Company", accountCode: "4101", phone: "604-555-0110", email: "service@harbourline.example", address: "200 Burrard St, Vancouver" },
+  { id: 2, name: "Strata VR2210 – The Larchway", category: "Customer", accountCode: "4102", parentId: 1 },
+  { id: 3, name: "Cedarpoint Living", category: "Property Management Company", accountCode: "4103", phone: "604-555-0130" },
   { id: 4, name: "North Shore School District (demo)", category: "Educational Institution", accountCode: "4104" },
   { id: 5, name: "Fraser Commons Holdings", category: "Corporation", accountCode: "4105" },
   { id: 6, name: "Pacific Sheet Metal (demo)", category: "Subtrade" },
@@ -33,15 +33,15 @@ export const buildings: Building[] = [
 ];
 
 export const equipment: Equipment[] = [
-  { id: 501, buildingId: 101, type: "Boiler", tag: "B-1", manufacturer: "Viessmann", model: "Vitocrossal 300", location: "Mech room P1", lastInspected: day(-40) },
-  { id: 502, buildingId: 101, type: "Boiler", tag: "B-2", manufacturer: "Viessmann", model: "Vitocrossal 300", location: "Mech room P1", lastInspected: day(-40) },
+  { id: 501, buildingId: 101, type: "Boiler", tag: "B-1", manufacturer: "Viessmann", model: "Vitocrossal 300", location: "Mech room P1", lastInspected: day(-40), serial: "7543210-01", installedYear: 2014, areaServed: "Building heating loop" },
+  { id: 502, buildingId: 101, type: "Boiler", tag: "B-2", manufacturer: "Viessmann", model: "Vitocrossal 300", location: "Mech room P1", lastInspected: day(-40), serial: "7543210-02", installedYear: 2014, areaServed: "Building heating loop" },
   { id: 503, buildingId: 101, type: "Domestic Hot Water Tank", tag: "DHW-1", manufacturer: "A.O. Smith", location: "Mech room P1" },
   { id: 504, buildingId: 102, type: "Make-up Air Unit", tag: "MUA-1", manufacturer: "Engineered Air", location: "Roof" },
   { id: 505, buildingId: 102, type: "Sump Pump", tag: "SP-1", location: "P3 parkade" },
-  { id: 506, buildingId: 105, type: "Rooftop Unit", tag: "RTU-3", manufacturer: "Trane", model: "Voyager", location: "Roof – gym" },
-  { id: 507, buildingId: 106, type: "Chiller", tag: "CH-1", manufacturer: "Daikin", location: "Roof" },
+  { id: 506, buildingId: 105, type: "Rooftop Unit", tag: "RTU-3", manufacturer: "Trane", model: "Voyager", location: "Roof – gym", serial: "21094KAL3F", refrigerant: "R-410A", refrigerantLbs: 18.5, filters: "4 × 20x25x2 MERV 8", belts: "2 × A42", areaServed: "Gymnasium", installedYear: 2026 },
+  { id: 507, buildingId: 106, type: "Chiller", tag: "CH-1", manufacturer: "Daikin", location: "Roof", model: "AGZ-100", serial: "STNU180400101", refrigerant: "R-410A", refrigerantLbs: 96, areaServed: "Floors 1–6" },
   { id: 508, buildingId: 103, type: "Backflow Preventer (RP)", tag: "BF-2", location: "Water entry" },
-  { id: 509, buildingId: 107, type: "Heat Pump", tag: "HP-12", manufacturer: "Mitsubishi", location: "Unit 1204" },
+  { id: 509, buildingId: 107, type: "Heat Pump", tag: "HP-12", manufacturer: "Mitsubishi", location: "Unit 1204", model: "MUZ-FS12", serial: "1023456T", refrigerant: "R-410A", refrigerantLbs: 2.6, filters: "Washable" },
   { id: 510, buildingId: 108, type: "Air Handling Unit", tag: "AHU-1", manufacturer: "Daikin", location: "Mech penthouse" },
 ];
 
@@ -62,9 +62,9 @@ export const people: Person[] = [
   { id: 22, name: "Morgan Hale", initials: "MH", kind: "staff", group: "Office", title: "Coordination Manager", canSendQuotes: true },
   { id: 23, name: "Chris Lindqvist", initials: "CL", kind: "staff", group: "Office", title: "CEO", canSendQuotes: true },
   // Customer contacts
-  { id: 40, name: "Helen Cho", initials: "HC", kind: "contact", title: "Strata Manager", email: "helen.cho@example.com", phone: "604-555-0141" },
-  { id: 41, name: "Ravi Gill", initials: "RG", kind: "contact", title: "Building Manager", email: "ravi.gill@example.com", phone: "604-555-0172" },
-  { id: 42, name: "Erin Walsh", initials: "EW", kind: "contact", title: "Facilities Lead", email: "erin.walsh@example.com", phone: "604-555-0188" },
+  { id: 40, name: "Helen Cho", initials: "HC", kind: "contact", title: "Strata Manager", email: "helen.cho@example.com", phone: "604-555-0141", orgId: 2 },
+  { id: 41, name: "Ravi Gill", initials: "RG", kind: "contact", title: "Building Manager", email: "ravi.gill@example.com", phone: "604-555-0172", orgId: 1 },
+  { id: 42, name: "Erin Walsh", initials: "EW", kind: "contact", title: "Facilities Lead", email: "erin.walsh@example.com", phone: "604-555-0188", orgId: 5 },
 ];
 
 const baseContract = {

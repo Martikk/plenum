@@ -19,7 +19,7 @@ export default function Buildings() {
             <div key={b.id} id={`b${b.id}`} className="card p-4 target:ring-2 target:ring-primary">
               <div className="font-semibold">{b.name}</div>
               <div className="text-ink-2">{b.address}, {b.city}</div>
-              <div className="text-[12.5px] text-ink-3">{L.org(b.orgId)?.name}</div>
+              <Link href={`/orgs?id=${b.orgId}`} className="block text-[12.5px] text-ink-3 hover:text-primary">{L.org(b.orgId)?.name}</Link>
               {b.access && <div className="mt-2 text-[12.5px] rounded-md p-2 bg-sunken flex gap-2"><KeyRound size={13} className="mt-0.5 shrink-0 text-ink-3" />{b.access}</div>}
               <div className="mt-3 label flex items-center gap-1"><Wrench size={12} />Equipment ({eq.length})</div>
               <div className="flex flex-wrap gap-1.5 mt-1">

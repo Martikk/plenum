@@ -84,7 +84,7 @@ export const users = {
   changeMine: (current: string, next: string) => call("/api/me/password", { method: "POST", body: JSON.stringify({ current, next }) }),
 };
 
-async function push(kind: "work-orders" | "invoices" | "profiles" | "settings" | "price", item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
+async function push(kind: "work-orders" | "invoices" | "profiles" | "settings" | "price" | `records/${"org" | "building" | "equipment" | "contact"}`, item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
   const s = useSync.getState();
   s.set({ pending: s.pending + 1 });
   try {
@@ -117,6 +117,10 @@ export function startSync(onAuthRequired: () => void) {
     for (const p of diff(next.profiles, prev.profiles)) push("profiles", p, p.id);
     if (next.settings !== prev.settings) push("settings", next.settings);
     for (const p of diff(next.priceBook, prev.priceBook)) push("price", p, p.id);
+    for (const o of diff(next.orgs, prev.orgs)) push("records/org", o, o.id);
+    for (const b of diff(next.buildings, prev.buildings)) push("records/building", b, b.id);
+    for (const e of diff(next.equipment, prev.equipment)) push("records/equipment", e, e.id);
+    for (const p of diff(next.people, prev.people)) if (p.kind === "contact") push("records/contact", p, p.id);
     for (const p of prev.priceBook) if (!next.priceBook.some((x) => x.id === p.id)) call(`/api/price/${p.id}`, { method: "DELETE" }).catch((e) => useSync.getState().set({ error: e.message }));
   });
 

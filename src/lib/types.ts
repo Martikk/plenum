@@ -49,7 +49,7 @@ export type Skill =
   | "Gas Fitter A" | "Gas Fitter B" | "HVAC Apprentice" | "HVAC Journeyman" | "Plumber Apprentice"
   | "Plumber Journeyman" | "Refrigeration Mechanic" | "Service Coordinator";
 
-export interface Org { id: number; name: string; category: string; accountCode?: string; }
+export interface Org { id: number; name: string; category: string; accountCode?: string; parentId?: number; phone?: string; email?: string; address?: string; }
 
 export interface Building {
   id: number; name: string; address: string; city: string; orgId: number;
@@ -59,6 +59,10 @@ export interface Building {
 export interface Equipment {
   id: number; buildingId: number; type: string; tag: string; manufacturer?: string; model?: string;
   location?: string; lastInspected?: string;
+  serial?: string; areaServed?: string; installedYear?: number;
+  refrigerant?: string; refrigerantLbs?: number;     // e.g. R-410A, 18.5 lb
+  filters?: string; belts?: string;                   // e.g. "4 × 20x25x2 MERV 8", "2 × A42"
+  notes?: string;
 }
 
 export interface Person {
@@ -68,6 +72,8 @@ export interface Person {
   /** Senior techs allowed to self-schedule and send quotes (Option B). */
   canSelfSchedule?: boolean; canSendQuotes?: boolean;
   email?: string; phone?: string;
+  orgId?: number;            // customer contacts: their organization
+  notes?: string;
 }
 
 export interface Contract {

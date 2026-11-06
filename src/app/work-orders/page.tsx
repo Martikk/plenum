@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csv";
 import { useLookups, useStore } from "@/lib/store";
 import { deriveStatus, economics, fmtDate, money, typeCode, MARGIN_THRESHOLD } from "@/lib/logic";
 import { Avatar, Chip, MarginMeter, PageHeader, UrgencyTag, WOStatusBadge, Empty } from "@/components/ui";
@@ -55,6 +56,9 @@ export default function WorkOrders() {
           <Chip active={f === "low"} onClick={() => setF("low")} count={count("low")}>GP &lt; 20%</Chip>
           <Chip active={f === "hold"} onClick={() => setF("hold")} count={count("hold")}>On hold</Chip>
           <Chip active={f === "all"} onClick={() => setF("all")} count={count("all")}>All</Chip>
+          <button className="btn btn-sm" title="Export the filtered list" onClick={() => downloadCSV("work-orders", ["WO", "Type", "Status", "Building", "City", "Organization", "Request", "Urgency", "PO", "Techs", "Quoted sell", "Cost to date", "GP%", "Created"],
+            list.map(({ w, c, e, st }) => [w.id, typeCode(c, "WO"), st, L.building(w.buildingId)?.name, L.building(w.buildingId)?.city, L.org(w.orgId)?.name, w.customerRequest, w.urgency, w.po, techs(w).map((p) => p.name).join("; "),
+              e.quote.sell.toFixed(2), e.actual.totalCostPst.toFixed(2), e.actual.margin == null ? "" : (e.actual.margin * 100).toFixed(1), w.createdAt.slice(0, 10)]))}><Download size={13} />CSV</button>
           <div className="flex-1" />
           <select className="field !w-auto" value={ctype} onChange={(e) => setCtype(e.target.value)}>
             <option value="">All contract types</option><option>Service</option><option>Maintenance</option><option>Installation</option>

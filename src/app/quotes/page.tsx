@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csv";
 import { useLookups, useStore } from "@/lib/store";
 import { economics, fmtDate, money, typeCode, relTime } from "@/lib/logic";
 import { Avatar, Chip, Empty, MarginMeter, PageHeader, QuoteStatusBadge, UrgencyTag } from "@/components/ui";
@@ -18,7 +19,10 @@ export default function Quotes() {
   return (
     <div>
       <PageHeader title="Quotes" sub="Techs initiate · Service Coordinator fills missing costs · sending posts the quote to the customer portal."
-        actions={<Link href="/quotes/new" className="btn btn-primary"><Plus size={15} />New quote</Link>} />
+        actions={<>
+          <button className="btn" onClick={() => downloadCSV("quotes", ["Quote", "Stage", "Building", "Organization", "Work recommended", "Urgency", "Sell", "Expected GP%", "Missing costs", "Created", "Sent"],
+            list.map((q) => { const c = L.contract(q.contractId)!; const e = economics(q, c, s.people, s.invoices); return [q.id, q.quoteStatus, L.building(q.buildingId)?.name, L.org(q.orgId)?.name, q.workRecommended || q.customerRequest, q.urgency, e.quote.sell.toFixed(2), e.quote.margin == null ? "" : (e.quote.margin * 100).toFixed(1), e.quote.missingCost, q.createdAt.slice(0, 10), q.quoteSentAt?.slice(0, 10)]; }))}><Download size={15} />CSV</button>
+          <Link href="/quotes/new" className="btn btn-primary"><Plus size={15} />New quote</Link></>} />
       <div className="card">
         <div className="p-3 flex flex-wrap gap-2 border-b border-line">
           <Chip active={f === "all"} onClick={() => setF("all")} count={qs.length}>All</Chip>

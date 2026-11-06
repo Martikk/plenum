@@ -3,14 +3,16 @@ import Link from "next/link";
 import { useLookups, useStore } from "@/lib/store";
 import { fmtDate, money, pct, typeCode } from "@/lib/logic";
 import { PageHeader } from "@/components/ui";
-import { Lock } from "lucide-react";
+import { Lock, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csv";
 
 export default function Contracts() {
   const s = useStore();
   const L = useLookups();
   return (
     <div>
-      <PageHeader title="Contracts" sub="Contracts carry the business rules: rates, markups, PO policy, default roles and buildings." />
+      <PageHeader title="Contracts" sub="Contracts carry the business rules: rates, markups, PO policy, default roles and buildings." actions={<button className="btn" onClick={() => downloadCSV("contracts", ["ID", "Type", "Service", "Customer", "Buildings", "Journeyman rate", "Apprentice rate", "Material markup", "Subtrade markup", "Installation markup", "Quote markup", "PO required", "All-inclusive", "Rates locked", "Start", "End", "Active"],
+        s.contracts.map((c) => [c.id, c.type, c.serviceType, L.org(c.orgId)?.name, c.buildingIds.map((b) => L.building(b)?.name).join("; "), c.rates.journeyman, c.rates.apprentice, c.materialMarkup, c.subtradeMarkup, c.installationMarkup, c.quoteMarkup, c.poRequired ? "yes" : "", c.allInclusive ? "yes" : "", c.lockRates ? "yes" : "", c.start, c.end, c.active ? "yes" : "no"]))}><Download size={15} />CSV</button>} />
       <div className="card overflow-x-auto">
         <table className="tbl">
           <thead><tr><th>ID</th><th>Contract</th><th>Buildings</th><th className="text-right">Journeyman</th><th className="text-right">Mat. markup</th><th>Rules</th><th>Open WOs</th><th>Start</th></tr></thead>

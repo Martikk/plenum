@@ -183,7 +183,7 @@ function WODetail() {
             <div className="font-semibold mb-2">Contacts</div>
             {w.roles.filter((r) => !TECH_ROLES.includes(r.type) && r.personId).map((r) => { const p = L.person(r.personId)!; return (
               <div key={r.id} className="text-[13px] mb-2 last:mb-0">
-                <div className="font-medium">{p.name} <span className="text-ink-3 font-normal">· {r.type}</span></div>
+                <Link href={`/people?id=${p.id}`} className="block font-medium hover:text-primary">{p.name} <span className="text-ink-3 font-normal">· {r.type}</span></Link>
                 {p.phone && <div className="text-ink-2 inline-flex items-center gap-1 mr-3"><Phone size={12} />{p.phone}</div>}
                 {p.email && <div className="text-ink-2 inline-flex items-center gap-1"><Mail size={12} />{p.email}</div>}
               </div>); })}
