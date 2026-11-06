@@ -51,4 +51,5 @@ Set `NEXT_PUBLIC_API_URL` to the plenum-api URL at build time. The app then requ
 - **Notifications**: bell in the header with role-specific events (portal approvals, overdue pricing, declined roles, invoices to review, low-margin jobs, new bookings for techs).
 - **Progress billing**: contract value, billed to date, remaining and holdback on each work order; progress invoices for N% with optional holdback (10% default on Installation, BC Builders Lien Act); final invoice nets previous billings and releases holdback.
 - **Equipment history** (`/equipment?id=`): service history, last inspection/service, next PM, linked profiles.
-- **Settings** (`/settings`): PST, GST, GP% threshold and internal labour cost, editable by management; user admin (create, role, password, delete) in API mode.
+- **Price book** (`/pricebook`): purchase costs by SKU/name/vendor; material lines auto-fill cost on match (WO, new quote, tech mobile), "Use price book" fixes missing costs in one click; stale prices (>6 months) flagged.
+- **Settings** (`/settings`): PST, GST, GP% threshold and internal labour cost, editable by management; user admin (create, role, password, delete), own password change and activity log in API mode.

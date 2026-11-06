@@ -133,3 +133,8 @@ export interface MaintProfile {
   active: boolean;
   generated: string[];         // "YYYY-MM" periods already generated
 }
+
+/** Price book entry: purchase cost used to fill material lines automatically. */
+export interface PriceItem {
+  id: number; sku?: string; name: string; type: MaterialType; unitCost: number; vendor?: string; updatedAt: string;
+}

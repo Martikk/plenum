@@ -18,6 +18,7 @@ import {
 import type { MaterialType, QuoteStatus, RoleStatus, RoleType, TimeType, WorkOrder } from "@/lib/types";
 import { TECH_ROLES } from "@/lib/types";
 import { WOFiles } from "@/components/files";
+import { findPrice } from "@/lib/price";
 
 const ROLE_STATUSES: RoleStatus[] = ["Holding", "Posted", "Assigned", "Declined", "Responding", "Incomplete", "Complete"];
 const MAT_TYPES: MaterialType[] = ["Equipment", "Materials", "Parts", "Supplies", "Tools", "Subtrade", "Quote Fee", "Truck Charge", "Other", "Filters from Stock", "Refrigerant Purchased", "Refrigerant from Stock", "Truck Stock Purchased", "Truck Stock from Stock"];
@@ -369,7 +370,11 @@ function Materials({ w }: { w: WorkOrder }) {
                         {ro ? <span className="num">{m.unitCost == null ? "—" : money2(m.unitCost)}</span> : (
                           <input type="number" min={0} step="0.01" className="field !w-28 text-right num !py-1" defaultValue={m.unitCost ?? ""} placeholder="missing"
                             onBlur={(ev) => ev.target.value !== "" && s.setMaterialCost(w.id, m.id, Number(ev.target.value), quoted)}
-                            style={missing ? { borderColor: "var(--warn)" } : undefined} />
+                            style={missing ? { borderColor: "var(--warn)" } : undefined} key={`${m.id}-${m.unitCost}`} />
+                        )}
+                        {!ro && missing && findPrice(s.priceBook, m.item) && (
+                          <button className="block ml-auto mt-1 text-[12px] text-primary" onClick={() => s.setMaterialCost(w.id, m.id, findPrice(s.priceBook, m.item)!.unitCost, quoted)}>
+                            Use price book {money2(findPrice(s.priceBook, m.item)!.unitCost)}</button>
                         )}
                       </td>
                       <td className="text-right num">{m.unitCost == null ? "—" : money2(m.unitCost * m.qty * (m.pstExempt ? 1 : 1 + PST))}</td>
@@ -384,7 +389,8 @@ function Materials({ w }: { w: WorkOrder }) {
             {!ro && (
               <div className="p-3 border-t border-line flex flex-wrap gap-2 items-end bg-sunken/40">
                 <Field label="Type"><select className="field" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value as MaterialType })}>{MAT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></Field>
-                <Field label="Item" className="flex-1 min-w-48"><input className="field" value={form.item} onChange={(e) => setForm({ ...form, item: e.target.value })} /></Field>
+                <Field label="Item" className="flex-1 min-w-48"><input className="field" list="pricebook" value={form.item} placeholder="Type or pick from price book"
+                  onChange={(e) => { const hit = findPrice(s.priceBook, e.target.value); setForm(hit ? { ...form, item: hit.name, type: hit.type, cost: String(hit.unitCost), vendor: hit.vendor ?? "" } : { ...form, item: e.target.value }); }} /></Field>
                 <Field label="Qty"><input type="number" className="field !w-20 num" value={form.qty} onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })} /></Field>
                 <Field label="Unit cost"><input type="number" className="field !w-28 num" placeholder="optional" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} /></Field>
                 <Field label="Vendor"><input className="field !w-40" value={form.vendor} onChange={(e) => setForm({ ...form, vendor: e.target.value })} /></Field>
@@ -394,6 +400,7 @@ function Materials({ w }: { w: WorkOrder }) {
           </div>
         );
       })}
+      <datalist id="pricebook">{s.priceBook.map((p) => <option key={p.id} value={p.name}>{p.sku} · ${p.unitCost}</option>)}</datalist>
       <p className="text-[12.5px] text-ink-3">Highlighted rows have no purchase cost. Sell = cost × (1 + markup) from the contract{c.type === "Installation" ? " (Installation markup replaces subtrade markup)" : ""}, unless a manual price is set.</p>
     </div>
   );

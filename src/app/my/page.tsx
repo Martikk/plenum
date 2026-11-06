@@ -7,6 +7,7 @@ import { PERSONAS, useLookups, useStore } from "@/lib/store";
 import { fmtDateTime } from "@/lib/logic";
 import { RoleStatusBadge, UrgencyTag } from "@/components/ui";
 import { WOFiles } from "@/components/files";
+import { findPrice } from "@/lib/price";
 import type { Role, WorkOrder } from "@/lib/types";
 
 function JobCard({ w, r }: { w: WorkOrder; r: Role }) {
@@ -82,11 +83,12 @@ function JobCard({ w, r }: { w: WorkOrder; r: Role }) {
             <div className="label flex items-center gap-1 mb-1.5"><Package size={13} />Materials used ({w.materials.length})</div>
             {w.materials.length > 0 && <ul className="text-[13.5px] mb-2 space-y-0.5">{w.materials.map((m) => <li key={m.id} className="num">{m.qty} × {m.item}</li>)}</ul>}
             <div className="flex gap-2">
-              <input className="field !h-10 flex-1" placeholder="Part / material" value={mat.item} onChange={(e) => setMat({ ...mat, item: e.target.value })} />
+              <input className="field !h-10 flex-1" list="pricebook-my" placeholder="Part / material" value={mat.item} onChange={(e) => setMat({ ...mat, item: e.target.value })} />
               <input type="number" inputMode="numeric" className="field !h-10 !w-16 num" value={mat.qty} onChange={(e) => setMat({ ...mat, qty: Number(e.target.value) })} />
-              <button className="btn !h-10" disabled={!mat.item} onClick={() => { s.addMaterial(w.id, { type: "Parts", item: mat.item, qty: mat.qty, unitCost: null, personId: me }, false); setMat({ item: "", qty: 1 }); }}>Add</button>
+              <button className="btn !h-10" disabled={!mat.item} onClick={() => { const hit = findPrice(s.priceBook, mat.item); s.addMaterial(w.id, { type: hit?.type ?? "Parts", item: hit?.name ?? mat.item, qty: mat.qty, unitCost: hit?.unitCost ?? null, vendor: hit?.vendor, personId: me }, false); setMat({ item: "", qty: 1 }); }}>Add</button>
             </div>
-            <p className="text-[12px] text-ink-3 mt-1">Office adds the cost from the supplier invoice.</p>
+            <datalist id="pricebook-my">{s.priceBook.map((p) => <option key={p.id} value={p.name} />)}</datalist>
+            <p className="text-[12px] text-ink-3 mt-1">Pick from the list to use the price book cost; anything else the office prices from the supplier invoice.</p>
           </div>
         </div>
       )}

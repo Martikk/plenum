@@ -7,6 +7,7 @@ import { DEFAULT_SETTINGS } from "@/lib/logic";
 import { Field, PageHeader } from "@/components/ui";
 import { apiEnabled } from "@/lib/api";
 import { Users } from "@/components/users";
+import { AuditLog, MyPassword } from "@/components/account";
 
 const pctIn = (v: number) => Math.round(v * 1000) / 10;
 
@@ -65,6 +66,8 @@ export default function Settings() {
         </section>
       )}
       {apiEnabled && canEdit && <Users />}
+      <MyPassword />
+      {canEdit && <AuditLog />}
     </div>
   );
 }

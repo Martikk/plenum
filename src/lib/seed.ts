@@ -1,5 +1,5 @@
 import type {
-  MaintProfile, Building, Contract, Equipment, Invoice, Org, Person, WorkOrder, Role, MaterialEntry, TimeEntry, HistoryItem,
+  PriceItem, MaintProfile, Building, Contract, Equipment, Invoice, Org, Person, WorkOrder, Role, MaterialEntry, TimeEntry, HistoryItem,
 } from "./types";
 
 /** All names, addresses and amounts below are fictional demo data. */
@@ -197,4 +197,23 @@ export const profiles: MaintProfile[] = [
   { id: 703, name: "Annual backflow test – Cedarpoint A", contractId: 1004, buildingId: 103, months: [4], hours: 1.5, techIds: [2], equipmentIds: [508], description: "Test BF-2, submit report to municipality.", active: true, generated: [] },
   { id: 704, name: "Semi-annual RTU PM – Lynn Creek", contractId: 1005, buildingId: 105, months: [4, 10], hours: 3, techIds: [6], equipmentIds: [506], description: "Filters, belts, coil clean, economizer check.", active: false, generated: [] },
   { id: 705, name: "Monthly sump check – Harbour View", contractId: 1001, buildingId: 102, months: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], hours: 1, techIds: [4], equipmentIds: [505], description: "Test float and alarm, clean pit screen.", active: true, generated: [ym(-1)] },
+];
+
+const pi = (id: number, sku: string, name: string, type: PriceItem["type"], unitCost: number, vendor: string): PriceItem => ({ id, sku, name, type, unitCost, vendor, updatedAt: day(-20) });
+export const priceBook: PriceItem[] = [
+  pi(1, "WAT-LF223-2", "2\" PRV Watts LF223", "Parts", 1180, "Andrew Sheret"),
+  pi(2, "TMV-125", "Thermostatic mixing valve 1-1/4\"", "Parts", 640, "Emco"),
+  pi(3, "EXP-14", "Expansion tank 14 gal", "Parts", 310, "Andrew Sheret"),
+  pi(4, "DHW-100G", "100 gal commercial gas DHW tank", "Equipment", 7850, "Emco"),
+  pi(5, "ZV-075", "Zone valve 3/4\" w/ actuator", "Parts", 265, "Emco"),
+  pi(6, "MTR-1HP", "1 HP motor 1725 rpm", "Parts", 420, "Wolseley"),
+  pi(7, "BLT-A", "A-section belt", "Parts", 18, "Wolseley"),
+  pi(8, "TSTAT-PRG", "Programmable thermostat", "Parts", 145, "Wolseley"),
+  pi(9, "R410A-25", "R-410A 25 lb", "Refrigerant Purchased", 520, "Refrigerative Supply"),
+  pi(10, "COIL-CLN-4", "Coil cleaner (4 gal)", "Supplies", 180, "Refrigerative Supply"),
+  pi(11, "FLT-20x25x2", "Pleated filter 20x25x2 MERV 8", "Filters from Stock", 9.5, "Stock"),
+  pi(12, "PMP-SUB-05", "1/2 HP submersible sump pump", "Parts", 465, "Andrew Sheret"),
+  pi(13, "DUCT-9K", "9k ductless wall head", "Equipment", 1120, "Mitsubishi Electric"),
+  pi(14, "LINESET-25", "Line set 1/4 x 3/8, 25 ft + condensate pump", "Materials", 240, "Refrigerative Supply"),
+  pi(15, "TRUCK", "Truck charge", "Truck Charge", 0, "Internal"),
 ];

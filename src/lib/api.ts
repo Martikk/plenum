@@ -53,7 +53,7 @@ export async function pull() {
   const data = await call<Record<string, unknown>>("/api/bootstrap");
   const user = useSync.getState().user ?? storedUser();
   applying = true;
-  useStore.setState({ ...(data as object), ...(user && user.role !== "customer" ? { persona: user.role } : {}) });
+  useStore.setState({ priceBook: [], profiles: [], ...(data as object), ...(user && user.role !== "customer" ? { persona: user.role } : {}) });
   applying = false;
   useSync.getState().set({ ready: true, user });
 }
@@ -84,7 +84,7 @@ export const users = {
   changeMine: (current: string, next: string) => call("/api/me/password", { method: "POST", body: JSON.stringify({ current, next }) }),
 };
 
-async function push(kind: "work-orders" | "invoices" | "profiles" | "settings", item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
+async function push(kind: "work-orders" | "invoices" | "profiles" | "settings" | "price", item: WorkOrder | Invoice | MaintProfile | object, id?: number) {
   const s = useSync.getState();
   s.set({ pending: s.pending + 1 });
   try {
@@ -116,6 +116,8 @@ export function startSync(onAuthRequired: () => void) {
     for (const i of diff(next.invoices, prev.invoices)) push("invoices", i, i.id);
     for (const p of diff(next.profiles, prev.profiles)) push("profiles", p, p.id);
     if (next.settings !== prev.settings) push("settings", next.settings);
+    for (const p of diff(next.priceBook, prev.priceBook)) push("price", p, p.id);
+    for (const p of prev.priceBook) if (!next.priceBook.some((x) => x.id === p.id)) call(`/api/price/${p.id}`, { method: "DELETE" }).catch((e) => useSync.getState().set({ error: e.message }));
   });
 
   setInterval(() => {
@@ -161,3 +163,6 @@ export const files = {
 
 export const importItems = (kind: string, items: { id: number }[]) =>
   call<{ count: number }>("/api/import", { method: "POST", body: JSON.stringify({ kind, items }) });
+
+export interface AuditRow { id: number; at: string; user_id: number | null; kind: string; entity_id: number; action: string; email: string | null }
+export const auditLog = () => call<AuditRow[]>("/api/audit");

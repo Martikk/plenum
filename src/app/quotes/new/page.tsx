@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { PERSONAS, useStore } from "@/lib/store";
 import { Field, PageHeader } from "@/components/ui";
+import { findPrice } from "@/lib/price";
 import type { MaterialEntry, MaterialType, Urgency, Role } from "@/lib/types";
 
 type Line = { type: MaterialType; item: string; qty: number; cost: string };
@@ -93,13 +94,14 @@ export default function NewQuote() {
                 <select className="field !w-36" value={l.type} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, type: e.target.value as MaterialType } : x)))}>
                   {["Equipment", "Materials", "Parts", "Supplies", "Refrigerant Purchased", "Other"].map((t) => <option key={t}>{t}</option>)}
                 </select>
-                <input className="field flex-1" placeholder="Spec, size, model" value={l.item} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, item: e.target.value } : x)))} />
+                <input className="field flex-1" list="pricebook-q" placeholder="Spec, size, model (or pick from price book)" value={l.item} onChange={(e) => { const hit = findPrice(s.priceBook, e.target.value); setLines(lines.map((x, j) => (j === i ? (hit ? { ...x, item: hit.name, type: hit.type, cost: String(hit.unitCost) } : { ...x, item: e.target.value }) : x))); }} />
                 <input type="number" className="field !w-16 num" value={l.qty} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, qty: Number(e.target.value) } : x)))} />
                 <input type="number" className="field !w-28 num" placeholder="Cost if known" value={l.cost} onChange={(e) => setLines(lines.map((x, j) => (j === i ? { ...x, cost: e.target.value } : x)))} />
                 <button className="btn btn-ghost !px-2" aria-label="Remove line" onClick={() => setLines(lines.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
               </div>
             ))}
             <button className="btn btn-sm" onClick={() => setLines([...lines, { type: "Parts", item: "", qty: 1, cost: "" }])}><Plus size={14} />Line</button>
+            <datalist id="pricebook-q">{s.priceBook.map((p) => <option key={p.id} value={p.name} />)}</datalist>
           </div>
         </section>
 

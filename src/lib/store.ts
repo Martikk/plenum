@@ -8,7 +8,7 @@ import type {
   QuoteStatus, Role, RoleStatus, RoleType, TimeEntry, WorkOrder,
 } from "./types";
 import { applySettings, billing, deriveStatus, DEFAULT_SETTINGS, type CalcSettings } from "./logic";
-import type { MaintProfile } from "./types";
+import type { MaintProfile, PriceItem } from "./types";
 
 export type Persona = "dispatcher" | "coordinator" | "tech" | "manager" | "ceo";
 export const PERSONAS: Record<Persona, { label: string; personId: number; blurb: string }> = {
@@ -21,7 +21,7 @@ export const PERSONAS: Record<Persona, { label: string; personId: number; blurb:
 
 interface Data {
   orgs: Org[]; buildings: Building[]; equipment: Equipment[]; people: Person[]; contracts: Contract[];
-  workOrders: WorkOrder[]; invoices: Invoice[]; profiles: MaintProfile[]; settings: CalcSettings;
+  workOrders: WorkOrder[]; invoices: Invoice[]; profiles: MaintProfile[]; settings: CalcSettings; priceBook: PriceItem[];
 }
 
 interface State extends Data {
@@ -56,13 +56,15 @@ interface State extends Data {
   /** Create PM work orders for every active profile due in `ym` ("YYYY-MM"). Returns created WO ids. */
   generatePM: (ym: string) => number[];
   setSettings: (s: CalcSettings) => void;
+  upsertPrice: (p: Omit<PriceItem, "id" | "updatedAt"> & { id?: number }) => void;
+  removePrice: (id: number) => void;
   importItems: (kind: "org" | "building" | "equipment" | "contact" | "contract", items: { id: number }[]) => void;
 }
 
 const fresh = (): Data => structuredClone({
   orgs: seed.orgs, buildings: seed.buildings, equipment: seed.equipment, people: seed.people,
   contracts: seed.contracts, workOrders: seed.workOrders, invoices: seed.invoices,
-  profiles: seed.profiles, settings: DEFAULT_SETTINGS,
+  profiles: seed.profiles, settings: DEFAULT_SETTINGS, priceBook: seed.priceBook,
 });
 
 let seq = Date.now() % 100000;
@@ -208,6 +210,12 @@ export const useStore = create<State>()(
           return created.map((w) => w.id);
         },
         setSettings: (settings) => { applySettings(settings); set({ settings }); },
+        upsertPrice: (p) => set((s) => {
+          const id = p.id ?? Math.max(0, ...s.priceBook.map((x) => x.id)) + 1;
+          const item: PriceItem = { ...p, id, updatedAt: new Date().toISOString() } as PriceItem;
+          return { priceBook: s.priceBook.some((x) => x.id === id) ? s.priceBook.map((x) => (x.id === id ? item : x)) : [...s.priceBook, item] };
+        }),
+        removePrice: (id) => set((s) => ({ priceBook: s.priceBook.filter((x) => x.id !== id) })),
         importItems: (kind, items) => set((s) => {
           const key = ({ org: "orgs", building: "buildings", equipment: "equipment", contact: "people", contract: "contracts" } as const)[kind];
           const ids = new Set(items.map((i) => i.id));
@@ -218,7 +226,7 @@ export const useStore = create<State>()(
     {
       name: "plenum-demo-v1",
       // Older saved states lack newer collections — fill them from seed.
-      merge: (persisted, current) => ({ ...current, ...(persisted as object), ...(!(persisted as State)?.profiles ? { profiles: current.profiles } : {}), ...(!(persisted as State)?.settings ? { settings: current.settings } : {}) }),
+      merge: (persisted, current) => ({ ...current, ...(persisted as object), ...(!(persisted as State)?.profiles ? { profiles: current.profiles } : {}), ...(!(persisted as State)?.settings ? { settings: current.settings } : {}), ...(!(persisted as State)?.priceBook ? { priceBook: current.priceBook } : {}) }),
       onRehydrateStorage: () => (st) => applySettings(st?.settings),
     },
   ),

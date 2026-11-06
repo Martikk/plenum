@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, CalendarRange, ClipboardList, FileText, Receipt, ScrollText, Building2, Search, Plus,
-  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon, Globe, BarChart3,
+  Sun, Moon, Monitor, RotateCcw, ChevronDown, Smartphone, CalendarClock, Settings as SettingsIcon, Globe, BarChart3, Tags,
 } from "lucide-react";
 import { PERSONAS, useHydrated, useStore, type Persona } from "@/lib/store";
 import { deriveStatus } from "@/lib/logic";
@@ -36,6 +36,7 @@ const NAV = [
   { href: "/contracts", label: "Contracts", icon: ScrollText },
   { href: "/buildings", label: "Buildings", icon: Building2 },
   { href: "/maintenance", label: "Maintenance", icon: CalendarClock },
+  { href: "/pricebook", label: "Price book", icon: Tags },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
   { href: "/portal", label: "Customer portal", icon: Globe },
