@@ -158,3 +158,6 @@ export const files = {
     return u;
   },
 };
+
+export const importItems = (kind: string, items: { id: number }[]) =>
+  call<{ count: number }>("/api/import", { method: "POST", body: JSON.stringify({ kind, items }) });

@@ -52,6 +52,7 @@ interface State extends Data {
   /** Create PM work orders for every active profile due in `ym` ("YYYY-MM"). Returns created WO ids. */
   generatePM: (ym: string) => number[];
   setSettings: (s: CalcSettings) => void;
+  importItems: (kind: "org" | "building" | "equipment" | "contact" | "contract", items: { id: number }[]) => void;
 }
 
 const fresh = (): Data => structuredClone({
@@ -181,6 +182,11 @@ export const useStore = create<State>()(
           return created.map((w) => w.id);
         },
         setSettings: (settings) => { applySettings(settings); set({ settings }); },
+        importItems: (kind, items) => set((s) => {
+          const key = ({ org: "orgs", building: "buildings", equipment: "equipment", contact: "people", contract: "contracts" } as const)[kind];
+          const ids = new Set(items.map((i) => i.id));
+          return { [key]: [...(s[key] as { id: number }[]).filter((x) => !ids.has(x.id)), ...items] } as Partial<State>;
+        }),
       };
     },
     {

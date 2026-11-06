@@ -10,6 +10,7 @@ import {
 import { PERSONAS, useHydrated, useStore, type Persona } from "@/lib/store";
 import { deriveStatus } from "@/lib/logic";
 import { Avatar } from "./ui";
+import { Notifications } from "./notifications";
 import { apiEnabled, logout, resetRemote, startSync, useSync } from "@/lib/api";
 import { LogOut, CloudOff, Cloud, X } from "lucide-react";
 
@@ -246,6 +247,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <CommandSearch />
           <div className="flex-1" />
           <Link href="/quotes/new" className="btn btn-primary !px-2.5 sm:!px-3" aria-label="New quote"><Plus size={16} /><span className="hidden sm:inline">New quote</span></Link>
+          {hydrated && <Notifications />}
           <ThemeToggle />
           {hydrated && <PersonaSwitch />}
         </header>

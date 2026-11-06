@@ -143,6 +143,7 @@ export function fmtDateTime(iso?: string) {
 }
 export function relTime(iso: string, now = new Date()) {
   const diff = (now.getTime() - new Date(iso).getTime()) / 36e5;
+  if (diff < 0) { const f = -diff; return f < 1 ? `in ${Math.max(1, Math.round(f * 60))}m` : f < 24 ? `in ${Math.round(f)}h` : `in ${Math.round(f / 24)}d`; }
   if (diff < 1) return `${Math.max(1, Math.round(diff * 60))}m ago`;
   if (diff < 24) return `${Math.round(diff)}h ago`;
   return `${Math.round(diff / 24)}d ago`;

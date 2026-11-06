@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { DEFAULT_SETTINGS } from "@/lib/logic";
@@ -56,6 +57,12 @@ export default function Settings() {
           <button className="btn btn-primary" onClick={save}>Save settings</button>
           {saved && <span className="inline-flex items-center gap-1" style={{ color: "var(--ok)" }}><Check size={15} />Saved</span>}
         </div>
+      )}
+      {canEdit && (
+        <section className="card p-5 flex items-center gap-4">
+          <div className="flex-1"><h2 className="font-semibold">Import data</h2><p className="text-[12.5px] text-ink-3">Organizations, buildings, equipment, contacts and contracts from GamePlanPro CSV exports.</p></div>
+          <Link href="/import" className="btn">Open import</Link>
+        </section>
       )}
       {apiEnabled && canEdit && <Users />}
     </div>
